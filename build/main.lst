@@ -1,0 +1,392 @@
+GAS LISTING /tmp/ccMkRDOy.s 			page 1
+
+
+   1              		.file	"main.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.rodata.main.str1.1,"aMS",@progbits,1
+   5              	.LC0:
+   6 0000 6F626A32 		.string	"obj2"
+   6      00
+   7              		.section	.rodata.main.str1.8,"aMS",@progbits,1
+   8              		.align 8
+   9              	.LC1:
+  10 0000 6F626A32 		.string	"obj2.name_len: %d obj2.content_len: %d\n"
+  10      2E6E616D 
+  10      655F6C65 
+  10      6E3A2025 
+  10      64206F62 
+  11              		.section	.text.main,"ax",@progbits
+  12              		.globl	main
+  14              	main:
+  15              	.LFB56:
+  16              		.file 1 "src/main.c"
+   1:src/main.c    **** /**
+   2:src/main.c    ****  * @file main.c
+   3:src/main.c    ****  * @author Istvan Milak (istvan.milak@gmail.com)
+   4:src/main.c    ****  * @brief 
+   5:src/main.c    ****  * @version 0.1
+   6:src/main.c    ****  * @date 2019-12-15
+   7:src/main.c    ****  * 
+   8:src/main.c    ****  * @copyright Copyright (c) 2019
+   9:src/main.c    ****  * 
+  10:src/main.c    ****  */
+  11:src/main.c    **** 
+  12:src/main.c    **** #include <stdio.h>
+  13:src/main.c    **** #include <stdlib.h>
+  14:src/main.c    **** #include <string.h>
+  15:src/main.c    **** #include "mcu_msg_parser.h"
+  16:src/main.c    **** 
+  17:src/main.c    **** 
+  18:src/main.c    **** // const char *test_str1 = "{@obj1($key11 = 11; $key12 = 'val12') @obj2  ($key21 = 2.1; $key22 = 'v
+  19:src/main.c    **** const char *test_str1 = "{@obj1($key11 = 11; $key12 = 'val12') @obj2  }";
+  20:src/main.c    **** int main()
+  21:src/main.c    **** {
+  17              		.loc 1 21 0
+  18              		.cfi_startproc
+  19 0000 4154     		pushq	%r12
+  20              	.LCFI0:
+  21              		.cfi_def_cfa_offset 16
+  22              		.cfi_offset 12, -16
+  23 0002 55       		pushq	%rbp
+  24              	.LCFI1:
+  25              		.cfi_def_cfa_offset 24
+  26              		.cfi_offset 6, -24
+  27 0003 53       		pushq	%rbx
+  28              	.LCFI2:
+  29              		.cfi_def_cfa_offset 32
+  30              		.cfi_offset 3, -32
+  31 0004 4883EC20 		subq	$32, %rsp
+  32              	.LCFI3:
+GAS LISTING /tmp/ccMkRDOy.s 			page 2
+
+
+  33              		.cfi_def_cfa_offset 64
+  34              		.loc 1 21 0
+  35 0008 64488B04 		movq	%fs:40, %rax
+  35      25280000 
+  35      00
+  36 0011 48894424 		movq	%rax, 24(%rsp)
+  36      18
+  37 0016 31C0     		xorl	%eax, %eax
+  22:src/main.c    ****     int i; 
+  23:src/main.c    ****     mcu_msg_obj_t obj1;
+  24:src/main.c    ****     // printf("len: %d\n", strlen(test_str1));
+  25:src/main.c    ****     obj1 = mcu_msg_parser_get_obj((char *)test_str1, "obj2", strlen(test_str1));
+  38              		.loc 1 25 0
+  39 0018 488B3500 		movq	test_str1(%rip), %rsi
+  39      000000
+  40 001f 48C7C1FF 		movq	$-1, %rcx
+  40      FFFFFF
+  41 0026 4889F7   		movq	%rsi, %rdi
+  42 0029 F2AE     		repnz scasb
+  43 002b 4889CA   		movq	%rcx, %rdx
+  44 002e 48F7D2   		notq	%rdx
+  45 0031 4889D1   		movq	%rdx, %rcx
+  46 0034 4883E901 		subq	$1, %rcx
+  47 0038 0FB7C9   		movzwl	%cx, %ecx
+  48 003b 4889E7   		movq	%rsp, %rdi
+  49 003e 488D1500 		leaq	.LC0(%rip), %rdx
+  49      000000
+  50 0045 E8000000 		call	mcu_msg_parser_get_obj@PLT
+  50      00
+  51              	.LVL0:
+  26:src/main.c    **** 
+  27:src/main.c    ****     printf("obj2.name_len: %d obj2.content_len: %d\n", obj1.name_len, obj1.content_len);
+  52              		.loc 1 27 0
+  53 004a 0FB76C24 		movzwl	18(%rsp), %ebp
+  53      12
+  54 004f 440FB764 		movzwl	16(%rsp), %r12d
+  54      2410
+  55              	.LVL1:
+  56              	.LBB12:
+  57              	.LBB13:
+  58              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
+   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
+   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2018 Free Software Foundation, Inc.
+   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
+   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
+   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
+   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
+   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
+   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
+  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
+  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
+GAS LISTING /tmp/ccMkRDOy.s 			page 3
+
+
+  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
+  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
+  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
+  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
+  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   _G_va_list __ap) __THROW;
+  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
+  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
+  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
+  35:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  36:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #elif !defined __cplusplus
+  37:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # define sprintf(str, ...) \
+  38:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
+  40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  41:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
+  44:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 _G_va_list __ap))
+  45:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  46:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  47:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __ap);
+  48:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  49:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  50:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if defined __USE_ISOC99 || defined __USE_UNIX98
+  51:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  52:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __snprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  53:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __slen, const char *__restrict __format,
+  54:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   ...) __THROW;
+  55:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  56:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    size_t __slen, const char *__restrict __format,
+  57:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    _G_va_list __ap) __THROW;
+  58:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  59:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  60:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  61:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (snprintf (char *__restrict __s, size_t __n,
+  62:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 const char *__restrict __fmt, ...))
+  63:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  64:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  65:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __va_arg_pack ());
+  66:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  67:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+  68:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define snprintf(str, len, ...) \
+  69:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___snprintf_chk (str, len, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  70:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __VA_ARGS__)
+  71:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+  72:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  73:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+GAS LISTING /tmp/ccMkRDOy.s 			page 4
+
+
+  74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
+  75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, _G_va_list __ap))
+  76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  77:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
+  79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  80:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  81:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  82:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  83:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __USE_FORTIFY_LEVEL > 1
+  84:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  85:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __fprintf_chk (FILE *__restrict __stream, int __flag,
+  86:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...);
+  87:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __printf_chk (int __flag, const char *__restrict __format, ...);
+  88:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vfprintf_chk (FILE *__restrict __stream, int __flag,
+  89:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format, _G_va_list __ap);
+  90:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vprintf_chk (int __flag, const char *__restrict __format,
+  91:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  _G_va_list __ap);
+  92:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  93:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  94:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
+  96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
+  98:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+  99:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 100:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 101:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 102:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** printf (const char *__restrict __fmt, ...)
+ 103:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 104:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __printf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __va_arg_pack ());
+  59              		.loc 2 104 0
+  60 0055 89E9     		movl	%ebp, %ecx
+  61 0057 4489E2   		movl	%r12d, %edx
+  62 005a 488D3500 		leaq	.LC1(%rip), %rsi
+  62      000000
+  63 0061 BF010000 		movl	$1, %edi
+  63      00
+  64 0066 B8000000 		movl	$0, %eax
+  64      00
+  65 006b E8000000 		call	__printf_chk@PLT
+  65      00
+  66              	.LVL2:
+  67              	.LBE13:
+  68              	.LBE12:
+  28:src/main.c    ****     for(i = 0; i < obj1.name_len; printf("%c",*(obj1.name + i)), i++);
+  69              		.loc 1 28 0
+  70 0070 BB000000 		movl	$0, %ebx
+  70      00
+  71 0075 EB12     		jmp	.L2
+  72              	.LVL3:
+  73              	.L3:
+  74              		.loc 1 28 0 is_stmt 0 discriminator 3
+  75 0077 4863C3   		movslq	%ebx, %rax
+  76 007a 48030424 		addq	(%rsp), %rax
+  77 007e 0FBE38   		movsbl	(%rax), %edi
+  78              	.LVL4:
+GAS LISTING /tmp/ccMkRDOy.s 			page 5
+
+
+  79              	.LBB14:
+  80              	.LBB15:
+  81              		.loc 2 104 0 is_stmt 1 discriminator 3
+  82 0081 E8000000 		call	putchar@PLT
+  82      00
+  83              	.LVL5:
+  84              	.LBE15:
+  85              	.LBE14:
+  86              		.loc 1 28 0 discriminator 3
+  87 0086 83C301   		addl	$1, %ebx
+  88              	.LVL6:
+  89              	.L2:
+  90              		.loc 1 28 0 is_stmt 0 discriminator 1
+  91 0089 4139DC   		cmpl	%ebx, %r12d
+  92 008c 7FE9     		jg	.L3
+  93              	.LVL7:
+  94              	.LBB16:
+  95              	.LBB17:
+  96              		.loc 2 104 0 is_stmt 1
+  97 008e BF3A0000 		movl	$58, %edi
+  97      00
+  98 0093 E8000000 		call	putchar@PLT
+  98      00
+  99              	.LVL8:
+ 100              	.LBE17:
+ 101              	.LBE16:
+  29:src/main.c    ****     printf(":");
+  30:src/main.c    ****     for(i = 0; i < obj1.content_len; printf("%c",*(obj1.content + i)), i++);
+ 102              		.loc 1 30 0
+ 103 0098 BB000000 		movl	$0, %ebx
+ 103      00
+ 104 009d EB13     		jmp	.L4
+ 105              	.LVL9:
+ 106              	.L5:
+ 107              		.loc 1 30 0 is_stmt 0 discriminator 3
+ 108 009f 4863C3   		movslq	%ebx, %rax
+ 109 00a2 48034424 		addq	8(%rsp), %rax
+ 109      08
+ 110 00a7 0FBE38   		movsbl	(%rax), %edi
+ 111              	.LVL10:
+ 112              	.LBB18:
+ 113              	.LBB19:
+ 114              		.loc 2 104 0 is_stmt 1 discriminator 3
+ 115 00aa E8000000 		call	putchar@PLT
+ 115      00
+ 116              	.LVL11:
+ 117              	.LBE19:
+ 118              	.LBE18:
+ 119              		.loc 1 30 0 discriminator 3
+ 120 00af 83C301   		addl	$1, %ebx
+ 121              	.LVL12:
+ 122              	.L4:
+ 123              		.loc 1 30 0 is_stmt 0 discriminator 1
+ 124 00b2 39DD     		cmpl	%ebx, %ebp
+ 125 00b4 7FE9     		jg	.L5
+ 126              	.LVL13:
+ 127              	.LBB20:
+GAS LISTING /tmp/ccMkRDOy.s 			page 6
+
+
+ 128              	.LBB21:
+ 129              		.loc 2 104 0 is_stmt 1
+ 130 00b6 BF0A0000 		movl	$10, %edi
+ 130      00
+ 131 00bb E8000000 		call	putchar@PLT
+ 131      00
+ 132              	.LVL14:
+ 133              	.LBE21:
+ 134              	.LBE20:
+  31:src/main.c    ****     printf("\n");
+  32:src/main.c    **** 
+  33:src/main.c    ****     return 0;
+  34:src/main.c    **** }
+ 135              		.loc 1 34 0
+ 136 00c0 B8000000 		movl	$0, %eax
+ 136      00
+ 137 00c5 488B5424 		movq	24(%rsp), %rdx
+ 137      18
+ 138 00ca 64483314 		xorq	%fs:40, %rdx
+ 138      25280000 
+ 138      00
+ 139 00d3 7509     		jne	.L8
+ 140 00d5 4883C420 		addq	$32, %rsp
+ 141              	.LCFI4:
+ 142              		.cfi_remember_state
+ 143              		.cfi_def_cfa_offset 32
+ 144 00d9 5B       		popq	%rbx
+ 145              	.LCFI5:
+ 146              		.cfi_def_cfa_offset 24
+ 147              	.LVL15:
+ 148 00da 5D       		popq	%rbp
+ 149              	.LCFI6:
+ 150              		.cfi_def_cfa_offset 16
+ 151 00db 415C     		popq	%r12
+ 152              	.LCFI7:
+ 153              		.cfi_def_cfa_offset 8
+ 154 00dd C3       		ret
+ 155              	.LVL16:
+ 156              	.L8:
+ 157              	.LCFI8:
+ 158              		.cfi_restore_state
+ 159 00de E8000000 		call	__stack_chk_fail@PLT
+ 159      00
+ 160              	.LVL17:
+ 161              		.cfi_endproc
+ 162              	.LFE56:
+ 164              		.globl	test_str1
+ 165              		.section	.rodata.str1.8,"aMS",@progbits,1
+ 166              		.align 8
+ 167              	.LC2:
+ 168 0000 7B406F62 		.string	"{@obj1($key11 = 11; $key12 = 'val12') @obj2  }"
+ 168      6A312824 
+ 168      6B657931 
+ 168      31203D20 
+ 168      31313B20 
+ 169              		.section	.data.rel.local.test_str1,"aw",@progbits
+ 170              		.align 8
+GAS LISTING /tmp/ccMkRDOy.s 			page 7
+
+
+ 173              	test_str1:
+ 174 0000 00000000 		.quad	.LC2
+ 174      00000000 
+ 175              		.text
+ 176              	.Letext0:
+ 177              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h"
+ 178              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 179              		.file 5 "/usr/include/x86_64-linux-gnu/bits/libio.h"
+ 180              		.file 6 "/usr/include/stdio.h"
+ 181              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 182              		.file 8 "/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h"
+ 183              		.file 9 "inc/mcu_msg_parser.h"
+ 184              		.file 10 "<built-in>"
+GAS LISTING /tmp/ccMkRDOy.s 			page 8
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+     /tmp/ccMkRDOy.s:14     .text.main:0000000000000000 main
+     /tmp/ccMkRDOy.s:173    .data.rel.local.test_str1:0000000000000000 test_str1
+     /tmp/ccMkRDOy.s:5      .rodata.main.str1.1:0000000000000000 .LC0
+     /tmp/ccMkRDOy.s:9      .rodata.main.str1.8:0000000000000000 .LC1
+
+UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
+mcu_msg_parser_get_obj
+__printf_chk
+putchar
+__stack_chk_fail
