@@ -21,5 +21,8 @@ typedef struct {
 
 
 mcu_msg_obj_t  mcu_msg_parser_get_obj(char *msg, char *obj, mcu_msg_size_t len);
-// mcu_msg_size_t   str_len(char *str);
+int8_t mcu_msg_parser_get_int(int *res, mcu_msg_obj_t obj, char *key);
+float mcu_msg_parser_get_float(mcu_msg_obj_t obj, char *key);
+void mcu_msg_parser_get_string(char *dest, mcu_msg_obj_t obj, char *key);
+// char *find_keyword(char *msg, mcu_msg_size_t len, char *keyword, char flagc, char stopc);
 #endif
