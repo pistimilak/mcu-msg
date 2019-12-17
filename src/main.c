@@ -15,7 +15,7 @@
 #include "mcu_msg_parser.h"
 
 
-const char *test_str1 = "{@obj1($key11 =   -1123334567  ; $key12 = 123) @obj2  ($key21 = 2.1; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
+const char *test_str1 = "{@obj1($key11 =   -1123334567  ; $key12 = 123) @obj2  ($key21 =   -2.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
 
 int main()
 {
@@ -43,11 +43,13 @@ int main()
     for(i = 0; i < obj2.content_len; printf("%c",*(obj2.content + i)), i++);
     printf("\n");
 
-    int val = 0, res;
-    res = mcu_msg_parser_get_int(&val, obj1, "key11");
-    // if((res = mcu_msg_parser_get_int(&val, obj1, "key11")) != -1) {
-    printf("r = %d val = %d\n", res, val);
-    // }
+    int ival = 0, res;
+    float fval = 0.0;
+    res = mcu_msg_parser_get_int(&ival, obj1, "key11");
+    printf("r = %d ival = %d\n", res, ival);
+    
+    res = mcu_msg_parser_get_float(&fval, obj2, "key21");
+    printf("r = %d fval = %.11f\n", res, fval);
     return 0;
 }
 

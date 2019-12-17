@@ -180,11 +180,9 @@ int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
     int sign = 1;
     int8_t res = 0; // result of function
 
-    if(p == NULL) { //key nout found
-        // printf(">> key not found\n");
+    if(p == NULL)  //key nout found
         return -1;
-    }
-    // printf(">> %s\n", p);
+
 
     switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
         case '+':
@@ -202,7 +200,6 @@ int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
     }
 
     for(i = 0; (p - obj.content) < obj.content_len && *p != ' ' && *p != CTRL_KEY_SEP; i++, p++) { //move to the end of the value string with i
-        
         if(*p < '0' || *p > '9') {    // if non valid number, return with error
             return -1;
         }
@@ -211,7 +208,6 @@ int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
     *res_val = 0;
     --p;
     while(i--) {
-        printf(">> %c\n", *p);
         *res_val += (*p-- - '0') * m;
         m *= 10;
         res++;
@@ -223,11 +219,71 @@ int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
 }
 
 
-float mcu_msg_parser_get_float(mcu_msg_obj_t obj, char *key)
+int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
 {
-    float res;
+    char *p = find_val(obj, key);
+    char *pf;
+    mcu_msg_size_t i;
+    unsigned m = 1;
+    float mf = 0.1;
+    int sign = 1;
+    int8_t res = 0; // result of function
 
-    return 0.0;    
+    if(p == NULL)  //key nout found
+        return -1;
+
+
+    switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
+        case '+':
+            sign = 1;
+            p++;
+        break;
+        
+        case '-':
+            sign = -1;
+            p++;
+        break;
+        
+        default:
+        break;
+    }
+
+    //move p to dec separator or end of the value
+    for(i = 0; (p - obj.content) < obj.content_len && *p != ' ' && *p != CTRL_KEY_SEP && *p != '.'; i++, p++) { 
+        if((*p < '0' || *p > '9')) {    // if non valid number, return with error
+            return -1;
+        }
+    }
+
+    *res_val = 0.0;
+    
+    if(*p == '.') {
+        pf = p + 1;
+        res++;
+    } else {
+        pf = NULL;
+    }
+
+    --p;
+    while(i--) {
+        *res_val += (*p-- - '0') * m;
+        m *= 10;
+        res++;
+    }
+    
+    // calculate floating point section after '.' (if there is)
+    for(; pf != NULL && (pf - obj.content) < obj.content_len && *pf != ' ' && *pf != CTRL_KEY_SEP; pf++) {
+        if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
+            return -1;
+        }
+        *res_val += (*pf - '0') * mf;
+        mf /= 10;
+        res++; 
+    }
+
+    *res_val *= sign; //corrigate with the sign
+
+    return res; // return with the digit count + '.' separator, if correct
 }
 
 void mcu_msg_parser_get_string(char *dest, mcu_msg_obj_t obj, char *key)
