@@ -15,42 +15,79 @@
 #include "mcu_msg_parser.h"
 
 
-const char *test_str1 = "{@obj1($key11 =   -1123334567  ; $key12 = 123) @obj2  ($key21 =   -2.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
+const char *test_str1 = "#test_msg {!CMD1 @obj1($key11 =   -1123334567  ; $key12 = 'string \"value\"') @obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
+
 
 int main()
 {
     int i;
-    // char *c = find_keyword(test_str1,strlen(test_str1), "key22", '$', '=');
-    // if (c != NULL)
-    //     printf("found: %s\n", c);
     
+    mcu_msg_t msg;
     mcu_msg_obj_t obj1, obj2;
-    obj1 = mcu_msg_parser_get_obj((char *)test_str1, "obj1", strlen(test_str1));
+    mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_init(printf_mcu_msg_str);
 
-    printf("obj1.name_len: %d obj1.content_len: %d\n", obj1.name_len, obj1.content_len);
-    for(i = 0; i < obj1.name_len; printf("%c",*(obj1.name + i)), i++);
+    printf("TEST mcu-msg-parser\n");
+    printf("-------------------\n");
+
+    printf("test_str1 = \"%s\"\n\n", test_str1);
+
+    printf(">> getting test_msg...\n");
+    msg = mcu_msg_get(test_str1, "test_msg", strlen(test_str1));
+    if(msg.content.s != NULL) {
+        printf("msg.id_len: %d msg.content_len: %d\n", msg.id.len, msg.content.len);
+        str_hnd.print(msg.id);
+        printf(":");
+        str_hnd.print(msg.content);
+        printf("\n\n");
+    } else {
+        printf("message not found!\n\n");
+    }
+
+    //##############################################################################################
+    printf(">> getting obj1...\n");
+    obj1 = mcu_msg_parser_get_obj(msg, "obj1");
+    printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
+    str_hnd.print(obj1.id);
     printf(":");
-    for(i = 0; i < obj1.content_len; printf("%c",*(obj1.content + i)), i++);
-    printf("\n");
+    str_hnd.print(obj1.content);
+    printf("\n\n");
 
-
-
-    obj2 = mcu_msg_parser_get_obj((char *)test_str1, "obj2", strlen(test_str1));
-
-    printf("obj2.name_len: %d obj2.content_len: %d\n", obj2.name_len, obj2.content_len);
-    for(i = 0; i < obj2.name_len; printf("%c",*(obj2.name + i)), i++);
+    //##############################################################################################
+    printf(">> getting obj2...\n");
+    obj2 = mcu_msg_parser_get_obj(msg, "obj2");
+    printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
+    for(i = 0; i < obj2.id_len; printf("%c",*(obj2.id + i)), i++);
     printf(":");
     for(i = 0; i < obj2.content_len; printf("%c",*(obj2.content + i)), i++);
-    printf("\n");
-
+    printf("\n\n");
+    
+    //##############################################################################################
+    printf(">> getting obj1->key11 intiger...\n");
     int ival = 0, res;
     float fval = 0.0;
     res = mcu_msg_parser_get_int(&ival, obj1, "key11");
-    printf("r = %d ival = %d\n", res, ival);
+    printf("r = %d ival = %d\n\n", res, ival);
     
+    //##############################################################################################
+    printf(">> getting obj2->key21 float...\n");
     res = mcu_msg_parser_get_float(&fval, obj2, "key21");
-    printf("r = %d fval = %.11f\n", res, fval);
+    printf("r = %d fval = %.11f\n\n", res, fval);
+
+    //##############################################################################################
+    printf(">> getting obj1->key12 string...\n");
+    mcu_msg_string_t str = mcu_msg_parser_get_string(obj1, "key12");
+    if(str.content != NULL) {
+        for(i = 0; i < str.len; printf("%c", *(str.content + i)), i++);
+        printf("\n");
+    } else {
+        printf("error getting string\n");
+    }
+    
     return 0;
 }
 
-
+void printf_mcu_msg_str(mcu_msg_string_t str)
+{
+    mcu_msg_size_t i;
+    for(i = 0; i < str.len; printf("%c", *(str.s + i)));
+}

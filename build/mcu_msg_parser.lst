@@ -1,4 +1,4 @@
-GAS LISTING /tmp/ccvnMFoE.s 			page 1
+GAS LISTING /tmp/ccL93DFv.s 			page 1
 
 
    1              		.file	"mcu_msg_parser.c"
@@ -6,7 +6,7 @@ GAS LISTING /tmp/ccvnMFoE.s 			page 1
    3              	.Ltext0:
    4              		.section	.text.is_ctrl_char,"ax",@progbits
    6              	is_ctrl_char:
-   7              	.LFB27:
+   7              	.LFB30:
    8              		.file 1 "src/mcu_msg_parser.c"
    1:src/mcu_msg_parser.c **** /**
    2:src/mcu_msg_parser.c ****  * @file mcu_msg_parser.c
@@ -22,1534 +22,2402 @@ GAS LISTING /tmp/ccvnMFoE.s 			page 1
   12:src/mcu_msg_parser.c **** #include "mcu_msg_parser.h"
   13:src/mcu_msg_parser.c **** 
   14:src/mcu_msg_parser.c **** /*Control chars*/
-  15:src/mcu_msg_parser.c **** #define CTRL_START_MSG      '{'
-  16:src/mcu_msg_parser.c **** #define CTRL_STOP_MSG       '}'
-  17:src/mcu_msg_parser.c **** #define CTRL_START_OBJ      '('
-  18:src/mcu_msg_parser.c **** #define CTRL_STOP_OBJ       ')'
-  19:src/mcu_msg_parser.c **** #define CTRL_OBJ_FLAG       '@'
-  20:src/mcu_msg_parser.c **** #define CTRL_KEY_FLAG       '$'
-  21:src/mcu_msg_parser.c **** #define CTRL_KEY_SEP        ';'
-  22:src/mcu_msg_parser.c **** #define CTRL_KEY_EQU        '='
-  23:src/mcu_msg_parser.c **** 
-  24:src/mcu_msg_parser.c **** 
-  25:src/mcu_msg_parser.c **** /**
-  26:src/mcu_msg_parser.c ****  * @brief Argument char is control char or not
-  27:src/mcu_msg_parser.c ****  * 
-  28:src/mcu_msg_parser.c ****  * @param c char
-  29:src/mcu_msg_parser.c ****  * @return uint8_t comparison result
-  30:src/mcu_msg_parser.c ****  */
-  31:src/mcu_msg_parser.c **** static uint8_t is_ctrl_char(char c)
-  32:src/mcu_msg_parser.c **** {
-   9              		.loc 1 32 0
+  15:src/mcu_msg_parser.c **** #define CTRL_MSG_FLAG       '#'
+  16:src/mcu_msg_parser.c **** #define CTRL_START_MSG      '{'
+  17:src/mcu_msg_parser.c **** #define CTRL_STOP_MSG       '}'
+  18:src/mcu_msg_parser.c **** #define CTRL_START_OBJ      '('
+  19:src/mcu_msg_parser.c **** #define CTRL_STOP_OBJ       ')'
+  20:src/mcu_msg_parser.c **** #define CTRL_OBJ_FLAG       '@'
+  21:src/mcu_msg_parser.c **** #define CTRL_KEY_FLAG       '$'
+  22:src/mcu_msg_parser.c **** #define CTRL_KEY_SEP        ';'
+  23:src/mcu_msg_parser.c **** #define CTRL_KEY_EQU        '='
+  24:src/mcu_msg_parser.c **** #define CTRL_CMD_FLAG       '!'
+  25:src/mcu_msg_parser.c **** 
+  26:src/mcu_msg_parser.c **** 
+  27:src/mcu_msg_parser.c **** 
+  28:src/mcu_msg_parser.c **** void mcu_msg_destroy(mcu_msg_t *msg)
+  29:src/mcu_msg_parser.c **** {
+  30:src/mcu_msg_parser.c ****     msg->id = NULL;
+  31:src/mcu_msg_parser.c ****     msg->content = NULL;
+  32:src/mcu_msg_parser.c ****     msg->id_len = 0;
+  33:src/mcu_msg_parser.c ****     msg->content_len = 0;
+  34:src/mcu_msg_parser.c **** }
+  35:src/mcu_msg_parser.c **** 
+  36:src/mcu_msg_parser.c **** void mcu_msg_destroy_obj(mcu_msg_obj_t *obj)
+  37:src/mcu_msg_parser.c **** {
+  38:src/mcu_msg_parser.c ****     obj->id = NULL;
+  39:src/mcu_msg_parser.c ****     obj->content = NULL;
+  40:src/mcu_msg_parser.c ****     obj->id_len = 0;
+  41:src/mcu_msg_parser.c ****     obj->content_len = 0;
+  42:src/mcu_msg_parser.c **** }
+  43:src/mcu_msg_parser.c **** 
+  44:src/mcu_msg_parser.c **** void mcu_msg_destroy_string(mcu_msg_string_t *str)
+  45:src/mcu_msg_parser.c **** {
+  46:src/mcu_msg_parser.c ****     str->content = NULL;
+  47:src/mcu_msg_parser.c ****     str->len = 0;
+  48:src/mcu_msg_parser.c **** }
+  49:src/mcu_msg_parser.c **** 
+  50:src/mcu_msg_parser.c **** /**
+GAS LISTING /tmp/ccL93DFv.s 			page 2
+
+
+  51:src/mcu_msg_parser.c ****  * @brief Argument char is control char or not
+  52:src/mcu_msg_parser.c ****  * 
+  53:src/mcu_msg_parser.c ****  * @param c char
+  54:src/mcu_msg_parser.c ****  * @return uint8_t comparison result
+  55:src/mcu_msg_parser.c ****  */
+  56:src/mcu_msg_parser.c **** static uint8_t is_ctrl_char(char c)
+  57:src/mcu_msg_parser.c **** {
+   9              		.loc 1 57 0
   10              		.cfi_startproc
   11              	.LVL0:
-  33:src/mcu_msg_parser.c ****     switch(c) {
-  12              		.loc 1 33 0
-  13 0000 4080FF3B 		cmpb	$59, %dil
-  14 0004 7441     		je	.L3
-  15 0006 4080FF3B 		cmpb	$59, %dil
-  16 000a 7E1A     		jle	.L7
-  17 000c 4080FF40 		cmpb	$64, %dil
-  18 0010 7435     		je	.L3
-  19 0012 4080FF40 		cmpb	$64, %dil
-  20 0016 7E29     		jle	.L8
-  21 0018 4080FF7B 		cmpb	$123, %dil
-  22 001c 7429     		je	.L3
-  23 001e 4080FF7D 		cmpb	$125, %dil
-  24 0022 7517     		jne	.L6
-  25 0024 EB21     		jmp	.L3
-GAS LISTING /tmp/ccvnMFoE.s 			page 2
+  58:src/mcu_msg_parser.c ****     switch(c) {
+  12              		.loc 1 58 0
+  13 0000 83EF21   		subl	$33, %edi
+  14              	.LVL1:
+  15 0003 4080FF5C 		cmpb	$92, %dil
+  16 0007 771A     		ja	.L5
+  17 0009 400FB6FF 		movzbl	%dil, %edi
+  18 000d 488D1500 		leaq	.L4(%rip), %rdx
+  18      000000
+  19 0014 486304BA 		movslq	(%rdx,%rdi,4), %rax
+  20 0018 4801D0   		addq	%rdx, %rax
+  21 001b FFE0     		jmp	*%rax
+  22              		.section	.rodata.is_ctrl_char,"a",@progbits
+  23              		.align 4
+  24              		.align 4
+  25              	.L4:
+  26 0000 00000000 		.long	.L3-.L4
+  27 0004 00000000 		.long	.L5-.L4
+  28 0008 00000000 		.long	.L3-.L4
+  29 000c 00000000 		.long	.L3-.L4
+  30 0010 00000000 		.long	.L5-.L4
+  31 0014 00000000 		.long	.L5-.L4
+  32 0018 00000000 		.long	.L5-.L4
+  33 001c 00000000 		.long	.L3-.L4
+  34 0020 00000000 		.long	.L3-.L4
+  35 0024 00000000 		.long	.L5-.L4
+  36 0028 00000000 		.long	.L5-.L4
+  37 002c 00000000 		.long	.L5-.L4
+  38 0030 00000000 		.long	.L5-.L4
+  39 0034 00000000 		.long	.L5-.L4
+  40 0038 00000000 		.long	.L5-.L4
+  41 003c 00000000 		.long	.L5-.L4
+  42 0040 00000000 		.long	.L5-.L4
+  43 0044 00000000 		.long	.L5-.L4
+  44 0048 00000000 		.long	.L5-.L4
+  45 004c 00000000 		.long	.L5-.L4
+  46 0050 00000000 		.long	.L5-.L4
+  47 0054 00000000 		.long	.L5-.L4
+  48 0058 00000000 		.long	.L5-.L4
+  49 005c 00000000 		.long	.L5-.L4
+  50 0060 00000000 		.long	.L5-.L4
+  51 0064 00000000 		.long	.L5-.L4
+  52 0068 00000000 		.long	.L3-.L4
+  53 006c 00000000 		.long	.L5-.L4
+  54 0070 00000000 		.long	.L3-.L4
+  55 0074 00000000 		.long	.L5-.L4
+  56 0078 00000000 		.long	.L5-.L4
+GAS LISTING /tmp/ccL93DFv.s 			page 3
 
 
-  26              	.L7:
-  27 0026 4080FF24 		cmpb	$36, %dil
-  28 002a 741B     		je	.L3
-  29 002c 4080FF24 		cmpb	$36, %dil
-  30 0030 7C09     		jl	.L6
-  31 0032 83EF28   		subl	$40, %edi
-  32              	.LVL1:
-  33 0035 4080FF01 		cmpb	$1, %dil
-  34 0039 760C     		jbe	.L3
-  35              	.L6:
-  34:src/mcu_msg_parser.c ****         case CTRL_START_MSG:
-  35:src/mcu_msg_parser.c ****         case CTRL_STOP_MSG:
-  36:src/mcu_msg_parser.c ****         case CTRL_START_OBJ:
-  37:src/mcu_msg_parser.c ****         case CTRL_STOP_OBJ:
-  38:src/mcu_msg_parser.c ****         case CTRL_OBJ_FLAG:
-  39:src/mcu_msg_parser.c ****         case CTRL_KEY_FLAG:
-  40:src/mcu_msg_parser.c ****         case CTRL_KEY_SEP:
-  41:src/mcu_msg_parser.c ****         case CTRL_KEY_EQU:
-  42:src/mcu_msg_parser.c ****             return 1;
-  43:src/mcu_msg_parser.c ****         default:
-  44:src/mcu_msg_parser.c ****             return 0;
-  36              		.loc 1 44 0
-  37 003b B8000000 		movl	$0, %eax
-  37      00
-  45:src/mcu_msg_parser.c ****     }
-  46:src/mcu_msg_parser.c **** }
-  38              		.loc 1 46 0
-  39 0040 C3       		ret
-  40              	.LVL2:
-  41              	.L8:
-  33:src/mcu_msg_parser.c ****         case CTRL_START_MSG:
-  42              		.loc 1 33 0
-  43 0041 4080FF3D 		cmpb	$61, %dil
-  44 0045 75F4     		jne	.L6
-  45              	.LVL3:
-  46              	.L3:
-  42:src/mcu_msg_parser.c ****         default:
-  47              		.loc 1 42 0
-  48 0047 B8010000 		movl	$1, %eax
-  48      00
-  49 004c C3       		ret
-  50              		.cfi_endproc
-  51              	.LFE27:
-  53              		.section	.text.is_valid_keyword_char,"ax",@progbits
-  55              	is_valid_keyword_char:
-  56              	.LFB28:
-  47:src/mcu_msg_parser.c **** 
-  48:src/mcu_msg_parser.c **** 
-  49:src/mcu_msg_parser.c **** /**
-  50:src/mcu_msg_parser.c ****  * @brief Argument char is valid keyword char or not
-  51:src/mcu_msg_parser.c ****  * 
-  52:src/mcu_msg_parser.c ****  * @param c char
-  53:src/mcu_msg_parser.c ****  * @return uint8_t comparison result
-  54:src/mcu_msg_parser.c ****  */
-  55:src/mcu_msg_parser.c **** static uint8_t is_valid_keyword_char(char c)
-  56:src/mcu_msg_parser.c **** {
-  57              		.loc 1 56 0
-GAS LISTING /tmp/ccvnMFoE.s 			page 3
+  57 007c 00000000 		.long	.L3-.L4
+  58 0080 00000000 		.long	.L5-.L4
+  59 0084 00000000 		.long	.L5-.L4
+  60 0088 00000000 		.long	.L5-.L4
+  61 008c 00000000 		.long	.L5-.L4
+  62 0090 00000000 		.long	.L5-.L4
+  63 0094 00000000 		.long	.L5-.L4
+  64 0098 00000000 		.long	.L5-.L4
+  65 009c 00000000 		.long	.L5-.L4
+  66 00a0 00000000 		.long	.L5-.L4
+  67 00a4 00000000 		.long	.L5-.L4
+  68 00a8 00000000 		.long	.L5-.L4
+  69 00ac 00000000 		.long	.L5-.L4
+  70 00b0 00000000 		.long	.L5-.L4
+  71 00b4 00000000 		.long	.L5-.L4
+  72 00b8 00000000 		.long	.L5-.L4
+  73 00bc 00000000 		.long	.L5-.L4
+  74 00c0 00000000 		.long	.L5-.L4
+  75 00c4 00000000 		.long	.L5-.L4
+  76 00c8 00000000 		.long	.L5-.L4
+  77 00cc 00000000 		.long	.L5-.L4
+  78 00d0 00000000 		.long	.L5-.L4
+  79 00d4 00000000 		.long	.L5-.L4
+  80 00d8 00000000 		.long	.L5-.L4
+  81 00dc 00000000 		.long	.L5-.L4
+  82 00e0 00000000 		.long	.L5-.L4
+  83 00e4 00000000 		.long	.L5-.L4
+  84 00e8 00000000 		.long	.L5-.L4
+  85 00ec 00000000 		.long	.L5-.L4
+  86 00f0 00000000 		.long	.L5-.L4
+  87 00f4 00000000 		.long	.L5-.L4
+  88 00f8 00000000 		.long	.L5-.L4
+  89 00fc 00000000 		.long	.L5-.L4
+  90 0100 00000000 		.long	.L5-.L4
+  91 0104 00000000 		.long	.L5-.L4
+  92 0108 00000000 		.long	.L5-.L4
+  93 010c 00000000 		.long	.L5-.L4
+  94 0110 00000000 		.long	.L5-.L4
+  95 0114 00000000 		.long	.L5-.L4
+  96 0118 00000000 		.long	.L5-.L4
+  97 011c 00000000 		.long	.L5-.L4
+  98 0120 00000000 		.long	.L5-.L4
+  99 0124 00000000 		.long	.L5-.L4
+ 100 0128 00000000 		.long	.L5-.L4
+ 101 012c 00000000 		.long	.L5-.L4
+ 102 0130 00000000 		.long	.L5-.L4
+ 103 0134 00000000 		.long	.L5-.L4
+ 104 0138 00000000 		.long	.L5-.L4
+ 105 013c 00000000 		.long	.L5-.L4
+ 106 0140 00000000 		.long	.L5-.L4
+ 107 0144 00000000 		.long	.L5-.L4
+ 108 0148 00000000 		.long	.L5-.L4
+ 109 014c 00000000 		.long	.L5-.L4
+ 110 0150 00000000 		.long	.L5-.L4
+ 111 0154 00000000 		.long	.L5-.L4
+ 112 0158 00000000 		.long	.L5-.L4
+ 113 015c 00000000 		.long	.L5-.L4
+GAS LISTING /tmp/ccL93DFv.s 			page 4
 
 
-  58              		.cfi_startproc
-  59              	.LVL4:
-  57:src/mcu_msg_parser.c ****     return (c == '_') || (c >= 'a' && c <= 'z') || 
-  60              		.loc 1 57 0
-  61 0000 4080FF5F 		cmpb	$95, %dil
-  62 0004 0F94C2   		sete	%dl
-  63 0007 8D479F   		leal	-97(%rdi), %eax
-  64 000a 3C19     		cmpb	$25, %al
-  65 000c 0F96C0   		setbe	%al
-  58:src/mcu_msg_parser.c ****                     (c >= 'A' && c <= 'Z') || 
-  59:src/mcu_msg_parser.c ****                     (c >= '0' && c <= '9') ? 1 : 0;
-  66              		.loc 1 59 0
-  67 000f 08C2     		orb	%al, %dl
-  68 0011 751C     		jne	.L11
-  58:src/mcu_msg_parser.c ****                     (c >= 'A' && c <= 'Z') || 
-  69              		.loc 1 58 0
-  70 0013 8D47BF   		leal	-65(%rdi), %eax
-  57:src/mcu_msg_parser.c ****     return (c == '_') || (c >= 'a' && c <= 'z') || 
-  71              		.loc 1 57 0
-  72 0016 3C19     		cmpb	$25, %al
-  73 0018 761B     		jbe	.L12
-  74              		.loc 1 59 0 discriminator 2
-  75 001a 83EF30   		subl	$48, %edi
-  76              	.LVL5:
-  77 001d 4080FF09 		cmpb	$9, %dil
-  78 0021 7606     		jbe	.L14
-  79              		.loc 1 59 0 is_stmt 0
-  80 0023 B8000000 		movl	$0, %eax
-  80      00
-  60:src/mcu_msg_parser.c **** }
-  81              		.loc 1 60 0 is_stmt 1
-  82 0028 C3       		ret
-  83              	.L14:
-  59:src/mcu_msg_parser.c **** }
-  84              		.loc 1 59 0
-  85 0029 B8010000 		movl	$1, %eax
-  85      00
-  86 002e C3       		ret
-  87              	.LVL6:
-  88              	.L11:
-  89 002f B8010000 		movl	$1, %eax
-  89      00
-  90 0034 C3       		ret
-  91              	.L12:
-  92 0035 B8010000 		movl	$1, %eax
-  92      00
-  93 003a C3       		ret
-  94              		.cfi_endproc
-  95              	.LFE28:
-  97              		.section	.text.str_len,"ax",@progbits
-  99              	str_len:
- 100              	.LFB29:
-  61:src/mcu_msg_parser.c **** 
-  62:src/mcu_msg_parser.c **** 
-  63:src/mcu_msg_parser.c **** /**
-  64:src/mcu_msg_parser.c ****  * @brief strlen implementation for internal usage
-  65:src/mcu_msg_parser.c ****  * 
-GAS LISTING /tmp/ccvnMFoE.s 			page 4
+ 114 0160 00000000 		.long	.L5-.L4
+ 115 0164 00000000 		.long	.L5-.L4
+ 116 0168 00000000 		.long	.L3-.L4
+ 117 016c 00000000 		.long	.L5-.L4
+ 118 0170 00000000 		.long	.L3-.L4
+ 119              		.section	.text.is_ctrl_char
+ 120              	.L3:
+  59:src/mcu_msg_parser.c ****         case CTRL_MSG_FLAG:
+  60:src/mcu_msg_parser.c ****         case CTRL_START_MSG:
+  61:src/mcu_msg_parser.c ****         case CTRL_STOP_MSG:
+  62:src/mcu_msg_parser.c ****         case CTRL_START_OBJ:
+  63:src/mcu_msg_parser.c ****         case CTRL_STOP_OBJ:
+  64:src/mcu_msg_parser.c ****         case CTRL_OBJ_FLAG:
+  65:src/mcu_msg_parser.c ****         case CTRL_KEY_FLAG:
+  66:src/mcu_msg_parser.c ****         case CTRL_KEY_SEP:
+  67:src/mcu_msg_parser.c ****         case CTRL_KEY_EQU:
+  68:src/mcu_msg_parser.c ****         case CTRL_CMD_FLAG:
+  69:src/mcu_msg_parser.c ****             return 1;
+ 121              		.loc 1 69 0
+ 122 001d B8010000 		movl	$1, %eax
+ 122      00
+ 123 0022 C3       		ret
+ 124              	.L5:
+  70:src/mcu_msg_parser.c ****         default:
+  71:src/mcu_msg_parser.c ****             return 0;
+ 125              		.loc 1 71 0
+ 126 0023 B8000000 		movl	$0, %eax
+ 126      00
+  72:src/mcu_msg_parser.c ****     }
+  73:src/mcu_msg_parser.c **** }
+ 127              		.loc 1 73 0
+ 128 0028 C3       		ret
+ 129              		.cfi_endproc
+ 130              	.LFE30:
+ 132              		.section	.text.is_whitespace,"ax",@progbits
+ 134              	is_whitespace:
+ 135              	.LFB31:
+  74:src/mcu_msg_parser.c **** 
+  75:src/mcu_msg_parser.c **** 
+  76:src/mcu_msg_parser.c **** 
+  77:src/mcu_msg_parser.c **** static uint8_t is_whitespace(char c)
+  78:src/mcu_msg_parser.c **** {
+ 136              		.loc 1 78 0
+ 137              		.cfi_startproc
+ 138              	.LVL2:
+  79:src/mcu_msg_parser.c ****     switch(c) {
+ 139              		.loc 1 79 0
+ 140 0000 4080FF09 		cmpb	$9, %dil
+ 141 0004 7C0C     		jl	.L9
+ 142 0006 4080FF0D 		cmpb	$13, %dil
+ 143 000a 7E0C     		jle	.L8
+ 144 000c 4080FF20 		cmpb	$32, %dil
+ 145 0010 7406     		je	.L8
+ 146              	.L9:
+  80:src/mcu_msg_parser.c ****         case  ' ':
+  81:src/mcu_msg_parser.c ****         case '\t':
+  82:src/mcu_msg_parser.c ****         case '\n':
+GAS LISTING /tmp/ccL93DFv.s 			page 5
 
 
-  66:src/mcu_msg_parser.c ****  * @param str string 
-  67:src/mcu_msg_parser.c ****  * @return mcu_msg_size_t length of string 
-  68:src/mcu_msg_parser.c ****  */
-  69:src/mcu_msg_parser.c **** static mcu_msg_size_t str_len(char *str)
-  70:src/mcu_msg_parser.c **** {
- 101              		.loc 1 70 0
- 102              		.cfi_startproc
- 103              	.LVL7:
-  71:src/mcu_msg_parser.c ****     mcu_msg_size_t res = 0;
- 104              		.loc 1 71 0
- 105 0000 B8000000 		movl	$0, %eax
- 105      00
-  72:src/mcu_msg_parser.c ****     char *p = str;
-  73:src/mcu_msg_parser.c ****     while(*p) {
- 106              		.loc 1 73 0
- 107 0005 EB07     		jmp	.L16
- 108              	.LVL8:
- 109              	.L17:
-  74:src/mcu_msg_parser.c ****         res++;
- 110              		.loc 1 74 0
- 111 0007 83C001   		addl	$1, %eax
- 112              	.LVL9:
-  75:src/mcu_msg_parser.c ****         p++;
- 113              		.loc 1 75 0
- 114 000a 4883C701 		addq	$1, %rdi
- 115              	.LVL10:
- 116              	.L16:
-  73:src/mcu_msg_parser.c ****         res++;
- 117              		.loc 1 73 0
- 118 000e 803F00   		cmpb	$0, (%rdi)
- 119 0011 75F4     		jne	.L17
-  76:src/mcu_msg_parser.c ****     }
-  77:src/mcu_msg_parser.c ****     return res;
-  78:src/mcu_msg_parser.c **** }
- 120              		.loc 1 78 0
- 121 0013 F3C3     		rep ret
- 122              		.cfi_endproc
- 123              	.LFE29:
- 125              		.section	.text.find_keyword,"ax",@progbits
- 127              	find_keyword:
- 128              	.LFB30:
-  79:src/mcu_msg_parser.c **** 
-  80:src/mcu_msg_parser.c **** /**
-  81:src/mcu_msg_parser.c ****  * @brief find the position of the keyword int message string (first occurance)
-  82:src/mcu_msg_parser.c ****  * if the keyword found in the message string, the next (none space) char must be stopc
-  83:src/mcu_msg_parser.c ****  * @param msg message
-  84:src/mcu_msg_parser.c ****  * @param len message length
-  85:src/mcu_msg_parser.c ****  * @param keyword keword has to be found
-  86:src/mcu_msg_parser.c ****  * @param flagc flag, eg. '@', '$'
-  87:src/mcu_msg_parser.c ****  * @param stopc stop character eg. '(', '='
-  88:src/mcu_msg_parser.c ****  * @return char* location of the keyword (whitout flag) or NULL if keyword not found
-  89:src/mcu_msg_parser.c ****  */
-  90:src/mcu_msg_parser.c **** static char *find_keyword(char *msg, mcu_msg_size_t len, char *keyword, char flagc, char stopc)
-  91:src/mcu_msg_parser.c **** {
- 129              		.loc 1 91 0
- 130              		.cfi_startproc
- 131              	.LVL11:
-GAS LISTING /tmp/ccvnMFoE.s 			page 5
+  83:src/mcu_msg_parser.c ****         case '\v':
+  84:src/mcu_msg_parser.c ****         case '\f':
+  85:src/mcu_msg_parser.c ****         case '\r':
+  86:src/mcu_msg_parser.c ****             return 1;
+  87:src/mcu_msg_parser.c ****         default:
+  88:src/mcu_msg_parser.c ****             return 0;
+ 147              		.loc 1 88 0
+ 148 0012 B8000000 		movl	$0, %eax
+ 148      00
+  89:src/mcu_msg_parser.c ****     }
+  90:src/mcu_msg_parser.c **** }
+ 149              		.loc 1 90 0
+ 150 0017 C3       		ret
+ 151              	.L8:
+  86:src/mcu_msg_parser.c ****         default:
+ 152              		.loc 1 86 0
+ 153 0018 B8010000 		movl	$1, %eax
+ 153      00
+ 154 001d C3       		ret
+ 155              		.cfi_endproc
+ 156              	.LFE31:
+ 158              		.section	.text.is_valid_keyword_char,"ax",@progbits
+ 160              	is_valid_keyword_char:
+ 161              	.LFB32:
+  91:src/mcu_msg_parser.c **** 
+  92:src/mcu_msg_parser.c **** /**
+  93:src/mcu_msg_parser.c ****  * @brief Argument char is valid keyword char or not
+  94:src/mcu_msg_parser.c ****  * 
+  95:src/mcu_msg_parser.c ****  * @param c char
+  96:src/mcu_msg_parser.c ****  * @return uint8_t comparison result
+  97:src/mcu_msg_parser.c ****  */
+  98:src/mcu_msg_parser.c **** static uint8_t is_valid_keyword_char(char c)
+  99:src/mcu_msg_parser.c **** {
+ 162              		.loc 1 99 0
+ 163              		.cfi_startproc
+ 164              	.LVL3:
+ 100:src/mcu_msg_parser.c ****     return (c == '_') || (c >= 'a' && c <= 'z') || 
+ 165              		.loc 1 100 0
+ 166 0000 4080FF5F 		cmpb	$95, %dil
+ 167 0004 0F94C2   		sete	%dl
+ 168 0007 8D479F   		leal	-97(%rdi), %eax
+ 169 000a 3C19     		cmpb	$25, %al
+ 170 000c 0F96C0   		setbe	%al
+ 101:src/mcu_msg_parser.c ****                     (c >= 'A' && c <= 'Z') || 
+ 102:src/mcu_msg_parser.c ****                     (c >= '0' && c <= '9') ? 1 : 0;
+ 171              		.loc 1 102 0
+ 172 000f 08C2     		orb	%al, %dl
+ 173 0011 751C     		jne	.L12
+ 101:src/mcu_msg_parser.c ****                     (c >= 'A' && c <= 'Z') || 
+ 174              		.loc 1 101 0
+ 175 0013 8D47BF   		leal	-65(%rdi), %eax
+ 100:src/mcu_msg_parser.c ****     return (c == '_') || (c >= 'a' && c <= 'z') || 
+ 176              		.loc 1 100 0
+ 177 0016 3C19     		cmpb	$25, %al
+ 178 0018 761B     		jbe	.L13
+ 179              		.loc 1 102 0 discriminator 2
+ 180 001a 83EF30   		subl	$48, %edi
+GAS LISTING /tmp/ccL93DFv.s 			page 6
 
 
- 132 0000 4157     		pushq	%r15
- 133              	.LCFI0:
- 134              		.cfi_def_cfa_offset 16
- 135              		.cfi_offset 15, -16
- 136 0002 4156     		pushq	%r14
- 137              	.LCFI1:
- 138              		.cfi_def_cfa_offset 24
- 139              		.cfi_offset 14, -24
- 140 0004 4155     		pushq	%r13
- 141              	.LCFI2:
- 142              		.cfi_def_cfa_offset 32
- 143              		.cfi_offset 13, -32
- 144 0006 4154     		pushq	%r12
- 145              	.LCFI3:
- 146              		.cfi_def_cfa_offset 40
- 147              		.cfi_offset 12, -40
- 148 0008 55       		pushq	%rbp
- 149              	.LCFI4:
- 150              		.cfi_def_cfa_offset 48
- 151              		.cfi_offset 6, -48
- 152 0009 53       		pushq	%rbx
- 153              	.LCFI5:
- 154              		.cfi_def_cfa_offset 56
- 155              		.cfi_offset 3, -56
- 156 000a 4883EC18 		subq	$24, %rsp
- 157              	.LCFI6:
- 158              		.cfi_def_cfa_offset 80
- 159 000e 4989FE   		movq	%rdi, %r14
- 160 0011 4889D7   		movq	%rdx, %rdi
- 161              	.LVL12:
- 162 0014 48895424 		movq	%rdx, 8(%rsp)
- 162      08
- 163 0019 4189F5   		movl	%esi, %r13d
- 164 001c 884C2416 		movb	%cl, 22(%rsp)
- 165 0020 44884424 		movb	%r8b, 23(%rsp)
- 165      17
- 166              	.LVL13:
-  92:src/mcu_msg_parser.c ****     char *p = msg;
-  93:src/mcu_msg_parser.c ****     char *loc;
-  94:src/mcu_msg_parser.c ****     uint8_t equal;
-  95:src/mcu_msg_parser.c ****     mcu_msg_size_t i;
-  96:src/mcu_msg_parser.c ****     mcu_msg_size_t key_len = str_len(keyword);
- 167              		.loc 1 96 0
- 168 0025 E8000000 		call	str_len
- 168      00
- 169              	.LVL14:
- 170 002a 66894424 		movw	%ax, 20(%rsp)
- 170      14
- 171              	.LVL15:
-  92:src/mcu_msg_parser.c ****     char *p = msg;
- 172              		.loc 1 92 0
- 173 002f 4C89F2   		movq	%r14, %rdx
-  97:src/mcu_msg_parser.c ****     while((p - msg) < len && *p) {
- 174              		.loc 1 97 0
- 175 0032 EB36     		jmp	.L19
- 176              	.LVL16:
- 177              	.L35:
-GAS LISTING /tmp/ccvnMFoE.s 			page 6
+ 181              	.LVL4:
+ 182 001d 4080FF09 		cmpb	$9, %dil
+ 183 0021 7606     		jbe	.L15
+ 184              		.loc 1 102 0 is_stmt 0
+ 185 0023 B8000000 		movl	$0, %eax
+ 185      00
+ 103:src/mcu_msg_parser.c **** }
+ 186              		.loc 1 103 0 is_stmt 1
+ 187 0028 C3       		ret
+ 188              	.L15:
+ 102:src/mcu_msg_parser.c **** }
+ 189              		.loc 1 102 0
+ 190 0029 B8010000 		movl	$1, %eax
+ 190      00
+ 191 002e C3       		ret
+ 192              	.LVL5:
+ 193              	.L12:
+ 194 002f B8010000 		movl	$1, %eax
+ 194      00
+ 195 0034 C3       		ret
+ 196              	.L13:
+ 197 0035 B8010000 		movl	$1, %eax
+ 197      00
+ 198 003a C3       		ret
+ 199              		.cfi_endproc
+ 200              	.LFE32:
+ 202              		.section	.text.str_len,"ax",@progbits
+ 204              	str_len:
+ 205              	.LFB33:
+ 104:src/mcu_msg_parser.c **** 
+ 105:src/mcu_msg_parser.c **** 
+ 106:src/mcu_msg_parser.c **** /**
+ 107:src/mcu_msg_parser.c ****  * @brief strlen implementation for internal usage
+ 108:src/mcu_msg_parser.c ****  * 
+ 109:src/mcu_msg_parser.c ****  * @param str string 
+ 110:src/mcu_msg_parser.c ****  * @return mcu_msg_size_t length of string 
+ 111:src/mcu_msg_parser.c ****  */
+ 112:src/mcu_msg_parser.c **** static mcu_msg_size_t str_len(char *str)
+ 113:src/mcu_msg_parser.c **** {
+ 206              		.loc 1 113 0
+ 207              		.cfi_startproc
+ 208              	.LVL6:
+ 114:src/mcu_msg_parser.c ****     mcu_msg_size_t res = 0;
+ 209              		.loc 1 114 0
+ 210 0000 B8000000 		movl	$0, %eax
+ 210      00
+ 115:src/mcu_msg_parser.c ****     char *p = str;
+ 116:src/mcu_msg_parser.c ****     while(*p) {
+ 211              		.loc 1 116 0
+ 212 0005 EB07     		jmp	.L17
+ 213              	.LVL7:
+ 214              	.L18:
+ 117:src/mcu_msg_parser.c ****         res++;
+ 215              		.loc 1 117 0
+ 216 0007 83C001   		addl	$1, %eax
+ 217              	.LVL8:
+ 118:src/mcu_msg_parser.c ****         p++;
+GAS LISTING /tmp/ccL93DFv.s 			page 7
 
 
-  98:src/mcu_msg_parser.c ****         if(((p - msg) < len - 1) && *p == flagc) {
-  99:src/mcu_msg_parser.c ****             loc = p + 1;
- 100:src/mcu_msg_parser.c ****             // exp_key = keyword;
- 101:src/mcu_msg_parser.c ****             equal = 1;
- 178              		.loc 1 101 0
- 179 0034 B8010000 		movl	$1, %eax
- 179      00
- 180 0039 EB03     		jmp	.L24
- 181              	.LVL17:
- 182              	.L26:
- 102:src/mcu_msg_parser.c ****             for(i = 0; (loc + i - msg) < len && i < key_len; i++) {
- 103:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
- 104:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
- 105:src/mcu_msg_parser.c ****                     equal = 0;
- 106:src/mcu_msg_parser.c ****                     break;
- 107:src/mcu_msg_parser.c ****                 }
- 108:src/mcu_msg_parser.c ****             }
- 109:src/mcu_msg_parser.c ****             while((loc + i - msg) < len && *(loc + i) == ' ') i++; //skip spaces
- 183              		.loc 1 109 0 discriminator 3
- 184 003b 83C301   		addl	$1, %ebx
- 185              	.LVL18:
- 186              	.L24:
- 187              		.loc 1 109 0 is_stmt 0 discriminator 1
- 188 003e 0FB7D3   		movzwl	%bx, %edx
- 189 0041 4C01FA   		addq	%r15, %rdx
- 190 0044 4889D1   		movq	%rdx, %rcx
- 191 0047 482B0C24 		subq	(%rsp), %rcx
- 192 004b 4C39E1   		cmpq	%r12, %rcx
- 193 004e 7D05     		jge	.L25
- 194              		.loc 1 109 0 discriminator 2
- 195 0050 803A20   		cmpb	$32, (%rdx)
- 196 0053 74E6     		je	.L26
- 197              	.L25:
- 110:src/mcu_msg_parser.c ****             if(equal && *(loc + i) == stopc) {
- 198              		.loc 1 110 0 is_stmt 1
- 199 0055 84C0     		testb	%al, %al
- 200 0057 740D     		je	.L20
- 201              		.loc 1 110 0 is_stmt 0 discriminator 1
- 202 0059 0FB64424 		movzbl	23(%rsp), %eax
- 202      17
- 203              	.LVL19:
- 204 005e 3802     		cmpb	%al, (%rdx)
- 205 0060 0F84C000 		je	.L18
- 205      0000
- 206              	.LVL20:
- 207              	.L20:
- 111:src/mcu_msg_parser.c ****                 return loc;
- 112:src/mcu_msg_parser.c ****             } else {
- 113:src/mcu_msg_parser.c ****                 p = loc + i;
- 114:src/mcu_msg_parser.c ****             }
- 115:src/mcu_msg_parser.c ****         }
- 116:src/mcu_msg_parser.c ****         p++;
- 208              		.loc 1 116 0 is_stmt 1
- 209 0066 4883C201 		addq	$1, %rdx
- 210              	.LVL21:
- 211              	.L19:
-  97:src/mcu_msg_parser.c ****         if(((p - msg) < len - 1) && *p == flagc) {
-GAS LISTING /tmp/ccvnMFoE.s 			page 7
+ 218              		.loc 1 118 0
+ 219 000a 4883C701 		addq	$1, %rdi
+ 220              	.LVL9:
+ 221              	.L17:
+ 116:src/mcu_msg_parser.c ****         res++;
+ 222              		.loc 1 116 0
+ 223 000e 803F00   		cmpb	$0, (%rdi)
+ 224 0011 75F4     		jne	.L18
+ 119:src/mcu_msg_parser.c ****     }
+ 120:src/mcu_msg_parser.c ****     return res;
+ 121:src/mcu_msg_parser.c **** }
+ 225              		.loc 1 121 0
+ 226 0013 F3C3     		rep ret
+ 227              		.cfi_endproc
+ 228              	.LFE33:
+ 230              		.section	.text.skip_internal_str,"ax",@progbits
+ 232              	skip_internal_str:
+ 233              	.LFB34:
+ 122:src/mcu_msg_parser.c **** 
+ 123:src/mcu_msg_parser.c **** 
+ 124:src/mcu_msg_parser.c **** static char *skip_internal_str(char *start)
+ 125:src/mcu_msg_parser.c **** {
+ 234              		.loc 1 125 0
+ 235              		.cfi_startproc
+ 236              	.LVL10:
+ 126:src/mcu_msg_parser.c ****     char *p = start;
+ 127:src/mcu_msg_parser.c ****     char qmark = *start;
+ 237              		.loc 1 127 0
+ 238 0000 0FB60F   		movzbl	(%rdi), %ecx
+ 239              	.LVL11:
+ 128:src/mcu_msg_parser.c ****     if((qmark != '\'' && qmark != '"')) return NULL;
+ 240              		.loc 1 128 0
+ 241 0003 80F927   		cmpb	$39, %cl
+ 242 0006 0F95C2   		setne	%dl
+ 243 0009 80F922   		cmpb	$34, %cl
+ 244 000c 0F95C0   		setne	%al
+ 245 000f 84C2     		testb	%al, %dl
+ 246 0011 751E     		jne	.L24
+ 129:src/mcu_msg_parser.c ****     ++p;
+ 247              		.loc 1 129 0
+ 248 0013 488D4701 		leaq	1(%rdi), %rax
+ 249              	.LVL12:
+ 130:src/mcu_msg_parser.c ****     while(*p && (*p != qmark)) {
+ 250              		.loc 1 130 0
+ 251 0017 EB04     		jmp	.L21
+ 252              	.L23:
+ 131:src/mcu_msg_parser.c ****         p++;
+ 253              		.loc 1 131 0
+ 254 0019 4883C001 		addq	$1, %rax
+ 255              	.LVL13:
+ 256              	.L21:
+ 130:src/mcu_msg_parser.c ****     while(*p && (*p != qmark)) {
+ 257              		.loc 1 130 0
+ 258 001d 0FB610   		movzbl	(%rax), %edx
+ 259 0020 84D2     		testb	%dl, %dl
+ 260 0022 7404     		je	.L22
+ 130:src/mcu_msg_parser.c ****     while(*p && (*p != qmark)) {
+GAS LISTING /tmp/ccL93DFv.s 			page 8
 
 
- 212              		.loc 1 97 0
- 213 006a 4C893424 		movq	%r14, (%rsp)
- 214 006e 4889D1   		movq	%rdx, %rcx
- 215 0071 4C29F1   		subq	%r14, %rcx
- 216 0074 450FB7E5 		movzwl	%r13w, %r12d
- 217 0078 4C39E1   		cmpq	%r12, %rcx
- 218 007b 0F8D9F00 		jge	.L32
- 218      0000
-  97:src/mcu_msg_parser.c ****         if(((p - msg) < len - 1) && *p == flagc) {
- 219              		.loc 1 97 0 is_stmt 0 discriminator 1
- 220 0081 0FB632   		movzbl	(%rdx), %esi
- 221 0084 4084F6   		testb	%sil, %sil
- 222 0087 0F848B00 		je	.L34
- 222      0000
-  98:src/mcu_msg_parser.c ****             loc = p + 1;
- 223              		.loc 1 98 0 is_stmt 1
- 224 008d 410FB7C5 		movzwl	%r13w, %eax
- 225 0091 83E801   		subl	$1, %eax
- 226 0094 4898     		cltq
- 227 0096 4839C8   		cmpq	%rcx, %rax
- 228 0099 7ECB     		jle	.L20
-  98:src/mcu_msg_parser.c ****             loc = p + 1;
- 229              		.loc 1 98 0 is_stmt 0 discriminator 1
- 230 009b 403A7424 		cmpb	22(%rsp), %sil
- 230      16
- 231 00a0 75C4     		jne	.L20
-  99:src/mcu_msg_parser.c ****             // exp_key = keyword;
- 232              		.loc 1 99 0 is_stmt 1
- 233 00a2 4C8D7A01 		leaq	1(%rdx), %r15
- 234              	.LVL22:
- 102:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
- 235              		.loc 1 102 0
- 236 00a6 BB000000 		movl	$0, %ebx
- 236      00
- 237              	.LVL23:
- 238              	.L21:
- 102:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
- 239              		.loc 1 102 0 is_stmt 0 discriminator 1
- 240 00ab 0FB7C3   		movzwl	%bx, %eax
- 241 00ae 498D1407 		leaq	(%r15,%rax), %rdx
- 242 00b2 4889D1   		movq	%rdx, %rcx
- 243 00b5 482B0C24 		subq	(%rsp), %rcx
- 244 00b9 4C39E1   		cmpq	%r12, %rcx
- 245 00bc 7D50     		jge	.L31
- 102:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
- 246              		.loc 1 102 0 discriminator 3
- 247 00be 663B5C24 		cmpw	20(%rsp), %bx
- 247      14
- 248 00c3 0F836BFF 		jnb	.L35
- 248      FFFF
- 103:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
- 249              		.loc 1 103 0 is_stmt 1
- 250 00c9 0FB62A   		movzbl	(%rdx), %ebp
- 251 00cc 488B7424 		movq	8(%rsp), %rsi
- 251      08
- 252 00d1 403A2C06 		cmpb	(%rsi,%rax), %bpl
- 253 00d5 7523     		jne	.L29
-GAS LISTING /tmp/ccvnMFoE.s 			page 8
+ 261              		.loc 1 130 0 is_stmt 0 discriminator 1
+ 262 0024 38CA     		cmpb	%cl, %dl
+ 263 0026 75F1     		jne	.L23
+ 264              	.L22:
+ 132:src/mcu_msg_parser.c ****     }
+ 133:src/mcu_msg_parser.c ****     
+ 134:src/mcu_msg_parser.c ****     return *p ? ++p : NULL;
+ 265              		.loc 1 134 0 is_stmt 1
+ 266 0028 84D2     		testb	%dl, %dl
+ 267 002a 740B     		je	.L25
+ 268              		.loc 1 134 0 is_stmt 0 discriminator 1
+ 269 002c 4883C001 		addq	$1, %rax
+ 270              	.LVL14:
+ 271 0030 C3       		ret
+ 272              	.LVL15:
+ 273              	.L24:
+ 128:src/mcu_msg_parser.c ****     ++p;
+ 274              		.loc 1 128 0 is_stmt 1
+ 275 0031 B8000000 		movl	$0, %eax
+ 275      00
+ 276 0036 C3       		ret
+ 277              	.LVL16:
+ 278              	.L25:
+ 279              		.loc 1 134 0
+ 280 0037 B8000000 		movl	$0, %eax
+ 280      00
+ 281              	.LVL17:
+ 135:src/mcu_msg_parser.c **** }
+ 282              		.loc 1 135 0
+ 283 003c C3       		ret
+ 284              		.cfi_endproc
+ 285              	.LFE34:
+ 287              		.section	.text.find_keyword,"ax",@progbits
+ 289              	find_keyword:
+ 290              	.LFB35:
+ 136:src/mcu_msg_parser.c **** 
+ 137:src/mcu_msg_parser.c **** 
+ 138:src/mcu_msg_parser.c **** /**
+ 139:src/mcu_msg_parser.c ****  * @brief find the position of the keyword int message string (first occurance)
+ 140:src/mcu_msg_parser.c ****  * if the keyword found in the message string, the next (none space) char must be stopc
+ 141:src/mcu_msg_parser.c ****  * @param msg message
+ 142:src/mcu_msg_parser.c ****  * @param len message length
+ 143:src/mcu_msg_parser.c ****  * @param keyword keword has to be found
+ 144:src/mcu_msg_parser.c ****  * @param flagc flag, eg. '@', '$'
+ 145:src/mcu_msg_parser.c ****  * @param stopc stop character eg. '(', '='
+ 146:src/mcu_msg_parser.c ****  * @return char* location of the keyword (whitout flag) or NULL if keyword not found
+ 147:src/mcu_msg_parser.c ****  */
+ 148:src/mcu_msg_parser.c **** static char *find_keyword(char *msg, mcu_msg_size_t len, char *keyword, char flagc, char stopc)
+ 149:src/mcu_msg_parser.c **** {
+ 291              		.loc 1 149 0
+ 292              		.cfi_startproc
+ 293              	.LVL18:
+ 294 0000 4157     		pushq	%r15
+ 295              	.LCFI0:
+ 296              		.cfi_def_cfa_offset 16
+ 297              		.cfi_offset 15, -16
+ 298 0002 4156     		pushq	%r14
+GAS LISTING /tmp/ccL93DFv.s 			page 9
 
 
- 103:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
- 254              		.loc 1 103 0 is_stmt 0 discriminator 1
- 255 00d7 400FBEED 		movsbl	%bpl, %ebp
- 256 00db 89EF     		movl	%ebp, %edi
- 257 00dd E8000000 		call	is_ctrl_char
- 257      00
- 258              	.LVL24:
- 259 00e2 84C0     		testb	%al, %al
- 260 00e4 751E     		jne	.L30
- 104:src/mcu_msg_parser.c ****                     equal = 0;
- 261              		.loc 1 104 0 is_stmt 1 discriminator 2
- 262 00e6 89EF     		movl	%ebp, %edi
- 263 00e8 E8000000 		call	is_valid_keyword_char
- 263      00
- 264              	.LVL25:
- 103:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
- 265              		.loc 1 103 0 discriminator 2
- 266 00ed 84C0     		testb	%al, %al
- 267 00ef 0F8449FF 		je	.L24
- 267      FFFF
- 102:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
- 268              		.loc 1 102 0 discriminator 2
- 269 00f5 83C301   		addl	$1, %ebx
- 270              	.LVL26:
- 271 00f8 EBB1     		jmp	.L21
- 272              	.L29:
- 105:src/mcu_msg_parser.c ****                     break;
- 273              		.loc 1 105 0
- 274 00fa B8000000 		movl	$0, %eax
- 274      00
- 275 00ff E93AFFFF 		jmp	.L24
- 275      FF
- 276              	.L30:
- 277 0104 B8000000 		movl	$0, %eax
- 277      00
- 278 0109 E930FFFF 		jmp	.L24
- 278      FF
- 279              	.L31:
- 101:src/mcu_msg_parser.c ****             for(i = 0; (loc + i - msg) < len && i < key_len; i++) {
- 280              		.loc 1 101 0
- 281 010e B8010000 		movl	$1, %eax
- 281      00
- 282 0113 E926FFFF 		jmp	.L24
- 282      FF
- 283              	.LVL27:
- 284              	.L34:
- 117:src/mcu_msg_parser.c ****     }
- 118:src/mcu_msg_parser.c ****     return NULL;
- 285              		.loc 1 118 0
- 286 0118 41BF0000 		movl	$0, %r15d
- 286      0000
- 287 011e EB06     		jmp	.L18
- 288              	.L32:
- 289 0120 41BF0000 		movl	$0, %r15d
- 289      0000
- 290              	.LVL28:
- 291              	.L18:
-GAS LISTING /tmp/ccvnMFoE.s 			page 9
+ 299              	.LCFI1:
+ 300              		.cfi_def_cfa_offset 24
+ 301              		.cfi_offset 14, -24
+ 302 0004 4155     		pushq	%r13
+ 303              	.LCFI2:
+ 304              		.cfi_def_cfa_offset 32
+ 305              		.cfi_offset 13, -32
+ 306 0006 4154     		pushq	%r12
+ 307              	.LCFI3:
+ 308              		.cfi_def_cfa_offset 40
+ 309              		.cfi_offset 12, -40
+ 310 0008 55       		pushq	%rbp
+ 311              	.LCFI4:
+ 312              		.cfi_def_cfa_offset 48
+ 313              		.cfi_offset 6, -48
+ 314 0009 53       		pushq	%rbx
+ 315              	.LCFI5:
+ 316              		.cfi_def_cfa_offset 56
+ 317              		.cfi_offset 3, -56
+ 318 000a 4883EC18 		subq	$24, %rsp
+ 319              	.LCFI6:
+ 320              		.cfi_def_cfa_offset 80
+ 321 000e 4989FD   		movq	%rdi, %r13
+ 322 0011 4889D7   		movq	%rdx, %rdi
+ 323              	.LVL19:
+ 324 0014 48895424 		movq	%rdx, 8(%rsp)
+ 324      08
+ 325 0019 4189F6   		movl	%esi, %r14d
+ 326 001c 884C2416 		movb	%cl, 22(%rsp)
+ 327 0020 44884424 		movb	%r8b, 23(%rsp)
+ 327      17
+ 328              	.LVL20:
+ 150:src/mcu_msg_parser.c ****     char *p = msg;
+ 151:src/mcu_msg_parser.c ****     char *loc;
+ 152:src/mcu_msg_parser.c ****     uint8_t equal;
+ 153:src/mcu_msg_parser.c ****     mcu_msg_size_t i;
+ 154:src/mcu_msg_parser.c ****     mcu_msg_size_t key_len = str_len(keyword);
+ 329              		.loc 1 154 0
+ 330 0025 E8000000 		call	str_len
+ 330      00
+ 331              	.LVL21:
+ 332 002a 66894424 		movw	%ax, 20(%rsp)
+ 332      14
+ 333              	.LVL22:
+ 150:src/mcu_msg_parser.c ****     char *p = msg;
+ 334              		.loc 1 150 0
+ 335 002f 4C89EB   		movq	%r13, %rbx
+ 155:src/mcu_msg_parser.c ****     while((p - msg) < len && *p) {
+ 336              		.loc 1 155 0
+ 337 0032 EB4D     		jmp	.L27
+ 338              	.LVL23:
+ 339              	.L44:
+ 156:src/mcu_msg_parser.c ****         if(*p == '\'' || *p == '"') { //skip internal strings
+ 157:src/mcu_msg_parser.c ****             p = skip_internal_str(p);
+ 340              		.loc 1 157 0
+ 341 0034 4889DF   		movq	%rbx, %rdi
+ 342 0037 E8000000 		call	skip_internal_str
+GAS LISTING /tmp/ccL93DFv.s 			page 10
 
 
- 119:src/mcu_msg_parser.c **** }
- 292              		.loc 1 119 0
- 293 0126 4C89F8   		movq	%r15, %rax
- 294 0129 4883C418 		addq	$24, %rsp
- 295              	.LCFI7:
- 296              		.cfi_def_cfa_offset 56
- 297 012d 5B       		popq	%rbx
- 298              	.LCFI8:
- 299              		.cfi_def_cfa_offset 48
- 300 012e 5D       		popq	%rbp
- 301              	.LCFI9:
- 302              		.cfi_def_cfa_offset 40
- 303 012f 415C     		popq	%r12
- 304              	.LCFI10:
- 305              		.cfi_def_cfa_offset 32
- 306 0131 415D     		popq	%r13
- 307              	.LCFI11:
- 308              		.cfi_def_cfa_offset 24
- 309              	.LVL29:
- 310 0133 415E     		popq	%r14
- 311              	.LCFI12:
- 312              		.cfi_def_cfa_offset 16
- 313              	.LVL30:
- 314 0135 415F     		popq	%r15
- 315              	.LCFI13:
- 316              		.cfi_def_cfa_offset 8
- 317 0137 C3       		ret
- 318              		.cfi_endproc
- 319              	.LFE30:
- 321              		.section	.text.find_val,"ax",@progbits
- 323              	find_val:
- 324              	.LFB31:
- 120:src/mcu_msg_parser.c **** 
- 121:src/mcu_msg_parser.c **** 
- 122:src/mcu_msg_parser.c **** /**
- 123:src/mcu_msg_parser.c ****  * @brief Getting the value start position for particular key in message object
- 124:src/mcu_msg_parser.c ****  * 
- 125:src/mcu_msg_parser.c ****  * @param obj message object
- 126:src/mcu_msg_parser.c ****  * @param key key for search
- 127:src/mcu_msg_parser.c ****  * @return char* location of the value start point or NULL if the key was not found
- 128:src/mcu_msg_parser.c ****  */
- 129:src/mcu_msg_parser.c **** static char *find_val(mcu_msg_obj_t obj, char *key)
- 130:src/mcu_msg_parser.c **** {
- 325              		.loc 1 130 0
- 326              		.cfi_startproc
- 327              	.LVL31:
- 328 0000 4156     		pushq	%r14
- 329              	.LCFI14:
- 330              		.cfi_def_cfa_offset 16
- 331              		.cfi_offset 14, -16
- 332 0002 4155     		pushq	%r13
- 333              	.LCFI15:
- 334              		.cfi_def_cfa_offset 24
- 335              		.cfi_offset 13, -24
- 336 0004 4154     		pushq	%r12
- 337              	.LCFI16:
- 338              		.cfi_def_cfa_offset 32
-GAS LISTING /tmp/ccvnMFoE.s 			page 10
+ 342      00
+ 343              	.LVL24:
+ 344 003c 4889C3   		movq	%rax, %rbx
+ 345              	.LVL25:
+ 346 003f EB70     		jmp	.L28
+ 347              	.LVL26:
+ 348              	.L45:
+ 158:src/mcu_msg_parser.c ****         }
+ 159:src/mcu_msg_parser.c ****         if(((p - msg) < len - 1) && *p == flagc) {
+ 160:src/mcu_msg_parser.c ****             loc = p + 1;
+ 161:src/mcu_msg_parser.c ****             // exp_key = keyword;
+ 162:src/mcu_msg_parser.c ****             equal = 1;
+ 349              		.loc 1 162 0
+ 350 0041 C6442413 		movb	$1, 19(%rsp)
+ 350      01
+ 351 0046 EB03     		jmp	.L33
+ 352              	.LVL27:
+ 353              	.L35:
+ 163:src/mcu_msg_parser.c ****             for(i = 0; (loc + i - msg) < len && i < key_len; i++) {
+ 164:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
+ 165:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
+ 166:src/mcu_msg_parser.c ****                     equal = 0;
+ 167:src/mcu_msg_parser.c ****                     break;
+ 168:src/mcu_msg_parser.c ****                 }
+ 169:src/mcu_msg_parser.c ****             }
+ 170:src/mcu_msg_parser.c ****             while((loc + i - msg) < len && is_whitespace(*(loc + i))) i++; //skip spaces
+ 354              		.loc 1 170 0 discriminator 3
+ 355 0048 83C501   		addl	$1, %ebp
+ 356              	.LVL28:
+ 357              	.L33:
+ 358              		.loc 1 170 0 is_stmt 0 discriminator 1
+ 359 004b 0FB7DD   		movzwl	%bp, %ebx
+ 360 004e 4C01FB   		addq	%r15, %rbx
+ 361 0051 4889D8   		movq	%rbx, %rax
+ 362 0054 482B0424 		subq	(%rsp), %rax
+ 363 0058 4C39E0   		cmpq	%r12, %rax
+ 364 005b 7D0C     		jge	.L34
+ 365              		.loc 1 170 0 discriminator 2
+ 366 005d 0FBE3B   		movsbl	(%rbx), %edi
+ 367 0060 E8000000 		call	is_whitespace
+ 367      00
+ 368              	.LVL29:
+ 369 0065 84C0     		testb	%al, %al
+ 370 0067 75DF     		jne	.L35
+ 371              	.L34:
+ 171:src/mcu_msg_parser.c ****             if(equal && *(loc + i) == stopc) {
+ 372              		.loc 1 171 0 is_stmt 1
+ 373 0069 807C2413 		cmpb	$0, 19(%rsp)
+ 373      00
+ 374 006e 740D     		je	.L29
+ 375              		.loc 1 171 0 is_stmt 0 discriminator 1
+ 376 0070 0FB64424 		movzbl	23(%rsp), %eax
+ 376      17
+ 377 0075 3803     		cmpb	%al, (%rbx)
+ 378 0077 0F84D700 		je	.L26
+ 378      0000
+ 379              	.LVL30:
+GAS LISTING /tmp/ccL93DFv.s 			page 11
 
 
- 339              		.cfi_offset 12, -32
- 340 0006 55       		pushq	%rbp
- 341              	.LCFI17:
- 342              		.cfi_def_cfa_offset 40
- 343              		.cfi_offset 6, -40
- 344 0007 53       		pushq	%rbx
- 345              	.LCFI18:
- 346              		.cfi_def_cfa_offset 48
- 347              		.cfi_offset 3, -48
- 348 0008 4989FE   		movq	%rdi, %r14
- 131:src/mcu_msg_parser.c ****     char *loc = find_keyword(obj.content, obj.content_len, key, CTRL_KEY_FLAG, CTRL_KEY_EQU); //obj
- 349              		.loc 1 131 0
- 350 000b 440FB764 		movzwl	66(%rsp), %r12d
- 350      2442
- 351 0011 450FB7EC 		movzwl	%r12w, %r13d
- 352 0015 488B6C24 		movq	56(%rsp), %rbp
- 352      38
- 353 001a 41B83D00 		movl	$61, %r8d
- 353      0000
- 354 0020 B9240000 		movl	$36, %ecx
- 354      00
- 355 0025 4889FA   		movq	%rdi, %rdx
- 356 0028 4489EE   		movl	%r13d, %esi
- 357 002b 4889EF   		movq	%rbp, %rdi
- 358              	.LVL32:
- 359 002e E8000000 		call	find_keyword
- 359      00
- 360              	.LVL33:
- 361 0033 4889C3   		movq	%rax, %rbx
- 362              	.LVL34:
- 132:src/mcu_msg_parser.c ****     char *p;
- 133:src/mcu_msg_parser.c ****     if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
- 363              		.loc 1 133 0
- 364 0036 4885C0   		testq	%rax, %rax
- 365 0039 744D     		je	.L36
- 134:src/mcu_msg_parser.c ****         return NULL;
- 135:src/mcu_msg_parser.c ****     }
- 136:src/mcu_msg_parser.c ****     p = loc + str_len(key);
- 366              		.loc 1 136 0
- 367 003b 4C89F7   		movq	%r14, %rdi
- 368 003e E8000000 		call	str_len
- 368      00
- 369              	.LVL35:
- 370 0043 0FB7C0   		movzwl	%ax, %eax
- 371 0046 4801C3   		addq	%rax, %rbx
- 372              	.LVL36:
- 137:src/mcu_msg_parser.c ****     if(*p != CTRL_KEY_EQU) {
- 373              		.loc 1 137 0
- 374 0049 803B3D   		cmpb	$61, (%rbx)
- 375 004c 750A     		jne	.L38
- 376              	.L39:
- 138:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
- 139:src/mcu_msg_parser.c ****     }
- 140:src/mcu_msg_parser.c ****     p++;
- 377              		.loc 1 140 0
- 378 004e 4883C301 		addq	$1, %rbx
- 379              	.LVL37:
-GAS LISTING /tmp/ccvnMFoE.s 			page 11
+ 380              	.L29:
+ 172:src/mcu_msg_parser.c ****                 return loc;
+ 173:src/mcu_msg_parser.c ****             } else {
+ 174:src/mcu_msg_parser.c ****                 p = loc + i;
+ 175:src/mcu_msg_parser.c ****             }
+ 176:src/mcu_msg_parser.c ****         }
+ 177:src/mcu_msg_parser.c ****         p++;
+ 381              		.loc 1 177 0 is_stmt 1
+ 382 007d 4883C301 		addq	$1, %rbx
+ 383              	.LVL31:
+ 384              	.L27:
+ 155:src/mcu_msg_parser.c ****         if(*p == '\'' || *p == '"') { //skip internal strings
+ 385              		.loc 1 155 0
+ 386 0081 4C892C24 		movq	%r13, (%rsp)
+ 387 0085 4889D8   		movq	%rbx, %rax
+ 388 0088 4C29E8   		subq	%r13, %rax
+ 389 008b 450FB7E6 		movzwl	%r14w, %r12d
+ 390 008f 4C39E0   		cmpq	%r12, %rax
+ 391 0092 0F8DB600 		jge	.L41
+ 391      0000
+ 155:src/mcu_msg_parser.c ****         if(*p == '\'' || *p == '"') { //skip internal strings
+ 392              		.loc 1 155 0 is_stmt 0 discriminator 1
+ 393 0098 0FB603   		movzbl	(%rbx), %eax
+ 394 009b 84C0     		testb	%al, %al
+ 395 009d 0F84A300 		je	.L43
+ 395      0000
+ 156:src/mcu_msg_parser.c ****             p = skip_internal_str(p);
+ 396              		.loc 1 156 0 is_stmt 1
+ 397 00a3 3C27     		cmpb	$39, %al
+ 398 00a5 0F94C2   		sete	%dl
+ 399 00a8 3C22     		cmpb	$34, %al
+ 400 00aa 0F94C0   		sete	%al
+ 401 00ad 08C2     		orb	%al, %dl
+ 402 00af 7583     		jne	.L44
+ 403              	.L28:
+ 159:src/mcu_msg_parser.c ****             loc = p + 1;
+ 404              		.loc 1 159 0
+ 405 00b1 4889DA   		movq	%rbx, %rdx
+ 406 00b4 4C29EA   		subq	%r13, %rdx
+ 407 00b7 410FB7C6 		movzwl	%r14w, %eax
+ 408 00bb 83E801   		subl	$1, %eax
+ 409 00be 4898     		cltq
+ 410 00c0 4839C2   		cmpq	%rax, %rdx
+ 411 00c3 7DB8     		jge	.L29
+ 159:src/mcu_msg_parser.c ****             loc = p + 1;
+ 412              		.loc 1 159 0 is_stmt 0 discriminator 1
+ 413 00c5 0FB64424 		movzbl	22(%rsp), %eax
+ 413      16
+ 414 00ca 3803     		cmpb	%al, (%rbx)
+ 415 00cc 75AF     		jne	.L29
+ 160:src/mcu_msg_parser.c ****             // exp_key = keyword;
+ 416              		.loc 1 160 0 is_stmt 1
+ 417 00ce 4C8D7B01 		leaq	1(%rbx), %r15
+ 418              	.LVL32:
+ 163:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
+ 419              		.loc 1 163 0
+ 420 00d2 BD000000 		movl	$0, %ebp
+GAS LISTING /tmp/ccL93DFv.s 			page 12
 
 
- 141:src/mcu_msg_parser.c ****     while((p - obj.content) < obj.content_len && *p == ' ') p++; //skip spaces after equal
- 380              		.loc 1 141 0
- 381 0052 EB20     		jmp	.L41
- 382              	.L40:
- 138:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
- 383              		.loc 1 138 0 discriminator 3
- 384 0054 4883C301 		addq	$1, %rbx
- 385              	.LVL38:
- 386              	.L38:
- 138:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
- 387              		.loc 1 138 0 is_stmt 0 discriminator 1
- 388 0058 4889DA   		movq	%rbx, %rdx
- 389 005b 4829EA   		subq	%rbp, %rdx
- 390 005e 418D45FF 		leal	-1(%r13), %eax
- 391 0062 4898     		cltq
- 392 0064 4839C2   		cmpq	%rax, %rdx
- 393 0067 7DE5     		jge	.L39
- 138:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
- 394              		.loc 1 138 0 discriminator 2
- 395 0069 803B3D   		cmpb	$61, (%rbx)
- 396 006c 75E6     		jne	.L40
- 397 006e EBDE     		jmp	.L39
- 398              	.L42:
- 399              		.loc 1 141 0 is_stmt 1 discriminator 3
- 400 0070 4883C301 		addq	$1, %rbx
- 401              	.LVL39:
- 402              	.L41:
- 403              		.loc 1 141 0 is_stmt 0 discriminator 1
- 404 0074 4889DA   		movq	%rbx, %rdx
- 405 0077 4829EA   		subq	%rbp, %rdx
- 406 007a 410FB7C4 		movzwl	%r12w, %eax
- 407 007e 4839C2   		cmpq	%rax, %rdx
- 408 0081 7D05     		jge	.L36
- 409              		.loc 1 141 0 discriminator 2
- 410 0083 803B20   		cmpb	$32, (%rbx)
- 411 0086 74E8     		je	.L42
- 412              	.LVL40:
- 413              	.L36:
- 142:src/mcu_msg_parser.c ****     return p;
- 143:src/mcu_msg_parser.c **** }
- 414              		.loc 1 143 0 is_stmt 1
- 415 0088 4889D8   		movq	%rbx, %rax
- 416 008b 5B       		popq	%rbx
- 417              	.LCFI19:
- 418              		.cfi_def_cfa_offset 40
- 419 008c 5D       		popq	%rbp
- 420              	.LCFI20:
- 421              		.cfi_def_cfa_offset 32
- 422 008d 415C     		popq	%r12
- 423              	.LCFI21:
- 424              		.cfi_def_cfa_offset 24
- 425 008f 415D     		popq	%r13
- 426              	.LCFI22:
- 427              		.cfi_def_cfa_offset 16
- 428 0091 415E     		popq	%r14
- 429              	.LCFI23:
- 430              		.cfi_def_cfa_offset 8
-GAS LISTING /tmp/ccvnMFoE.s 			page 12
+ 420      00
+ 421              	.LVL33:
+ 422              	.L30:
+ 163:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
+ 423              		.loc 1 163 0 is_stmt 0 discriminator 1
+ 424 00d7 0FB7C5   		movzwl	%bp, %eax
+ 425 00da 498D1407 		leaq	(%r15,%rax), %rdx
+ 426 00de 4889D1   		movq	%rdx, %rcx
+ 427 00e1 482B0C24 		subq	(%rsp), %rcx
+ 428 00e5 4C39E1   		cmpq	%r12, %rcx
+ 429 00e8 7D52     		jge	.L40
+ 163:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
+ 430              		.loc 1 163 0 discriminator 3
+ 431 00ea 663B6C24 		cmpw	20(%rsp), %bp
+ 431      14
+ 432 00ef 0F834CFF 		jnb	.L45
+ 432      FFFF
+ 164:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
+ 433              		.loc 1 164 0 is_stmt 1
+ 434 00f5 0FB61A   		movzbl	(%rdx), %ebx
+ 435 00f8 488B7C24 		movq	8(%rsp), %rdi
+ 435      08
+ 436 00fd 3A1C07   		cmpb	(%rdi,%rax), %bl
+ 437 0100 7526     		jne	.L38
+ 164:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
+ 438              		.loc 1 164 0 is_stmt 0 discriminator 1
+ 439 0102 0FBEDB   		movsbl	%bl, %ebx
+ 440 0105 89DF     		movl	%ebx, %edi
+ 441 0107 E8000000 		call	is_ctrl_char
+ 441      00
+ 442              	.LVL34:
+ 443 010c 84C0     		testb	%al, %al
+ 444 010e 7522     		jne	.L39
+ 165:src/mcu_msg_parser.c ****                     equal = 0;
+ 445              		.loc 1 165 0 is_stmt 1 discriminator 2
+ 446 0110 89DF     		movl	%ebx, %edi
+ 447 0112 E8000000 		call	is_valid_keyword_char
+ 447      00
+ 448              	.LVL35:
+ 449 0117 88442413 		movb	%al, 19(%rsp)
+ 164:src/mcu_msg_parser.c ****                                     !is_valid_keyword_char(*(loc + i))) {
+ 450              		.loc 1 164 0 discriminator 2
+ 451 011b 84C0     		testb	%al, %al
+ 452 011d 0F8428FF 		je	.L33
+ 452      FFFF
+ 163:src/mcu_msg_parser.c ****                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
+ 453              		.loc 1 163 0 discriminator 2
+ 454 0123 83C501   		addl	$1, %ebp
+ 455              	.LVL36:
+ 456 0126 EBAF     		jmp	.L30
+ 457              	.L38:
+ 166:src/mcu_msg_parser.c ****                     break;
+ 458              		.loc 1 166 0
+ 459 0128 C6442413 		movb	$0, 19(%rsp)
+ 459      00
+ 460 012d E919FFFF 		jmp	.L33
+ 460      FF
+GAS LISTING /tmp/ccL93DFv.s 			page 13
 
 
- 431              	.LVL41:
- 432 0093 C3       		ret
- 433              		.cfi_endproc
- 434              	.LFE31:
- 436              		.section	.text.mcu_msg_parser_get_obj,"ax",@progbits
- 437              		.globl	mcu_msg_parser_get_obj
- 439              	mcu_msg_parser_get_obj:
- 440              	.LFB32:
- 144:src/mcu_msg_parser.c **** 
- 145:src/mcu_msg_parser.c **** 
- 146:src/mcu_msg_parser.c **** 
- 147:src/mcu_msg_parser.c **** mcu_msg_obj_t mcu_msg_parser_get_obj(char *msg, char *obj, mcu_msg_size_t len)
- 148:src/mcu_msg_parser.c **** {
- 441              		.loc 1 148 0
- 442              		.cfi_startproc
- 443              	.LVL42:
- 444 0000 4157     		pushq	%r15
- 445              	.LCFI24:
- 446              		.cfi_def_cfa_offset 16
- 447              		.cfi_offset 15, -16
- 448 0002 4156     		pushq	%r14
- 449              	.LCFI25:
- 450              		.cfi_def_cfa_offset 24
- 451              		.cfi_offset 14, -24
- 452 0004 4155     		pushq	%r13
- 453              	.LCFI26:
- 454              		.cfi_def_cfa_offset 32
- 455              		.cfi_offset 13, -32
- 456 0006 4154     		pushq	%r12
- 457              	.LCFI27:
- 458              		.cfi_def_cfa_offset 40
- 459              		.cfi_offset 12, -40
- 460 0008 55       		pushq	%rbp
- 461              	.LCFI28:
- 462              		.cfi_def_cfa_offset 48
- 463              		.cfi_offset 6, -48
- 464 0009 53       		pushq	%rbx
- 465              	.LCFI29:
- 466              		.cfi_def_cfa_offset 56
- 467              		.cfi_offset 3, -56
- 468 000a 4883EC28 		subq	$40, %rsp
- 469              	.LCFI30:
- 470              		.cfi_def_cfa_offset 96
- 471 000e 4989FD   		movq	%rdi, %r13
- 472 0011 4889F5   		movq	%rsi, %rbp
- 473 0014 4989D7   		movq	%rdx, %r15
- 474 0017 4189CC   		movl	%ecx, %r12d
- 149:src/mcu_msg_parser.c ****     mcu_msg_obj_t res;
- 150:src/mcu_msg_parser.c ****     char *loc = find_keyword(msg, len, obj, CTRL_OBJ_FLAG, CTRL_START_OBJ); //object start with @ a
- 475              		.loc 1 150 0
- 476 001a 440FB7F1 		movzwl	%cx, %r14d
- 477 001e 41B82800 		movl	$40, %r8d
- 477      0000
- 478 0024 B9400000 		movl	$64, %ecx
- 478      00
- 479              	.LVL43:
- 480 0029 4489F6   		movl	%r14d, %esi
-GAS LISTING /tmp/ccvnMFoE.s 			page 13
+ 461              	.L39:
+ 462 0132 C6442413 		movb	$0, 19(%rsp)
+ 462      00
+ 463 0137 E90FFFFF 		jmp	.L33
+ 463      FF
+ 464              	.L40:
+ 162:src/mcu_msg_parser.c ****             for(i = 0; (loc + i - msg) < len && i < key_len; i++) {
+ 465              		.loc 1 162 0
+ 466 013c C6442413 		movb	$1, 19(%rsp)
+ 466      01
+ 467 0141 E905FFFF 		jmp	.L33
+ 467      FF
+ 468              	.LVL37:
+ 469              	.L43:
+ 178:src/mcu_msg_parser.c ****     }
+ 179:src/mcu_msg_parser.c ****     return NULL;
+ 470              		.loc 1 179 0
+ 471 0146 41BF0000 		movl	$0, %r15d
+ 471      0000
+ 472 014c EB06     		jmp	.L26
+ 473              	.L41:
+ 474 014e 41BF0000 		movl	$0, %r15d
+ 474      0000
+ 475              	.LVL38:
+ 476              	.L26:
+ 180:src/mcu_msg_parser.c **** }
+ 477              		.loc 1 180 0
+ 478 0154 4C89F8   		movq	%r15, %rax
+ 479 0157 4883C418 		addq	$24, %rsp
+ 480              	.LCFI7:
+ 481              		.cfi_def_cfa_offset 56
+ 482 015b 5B       		popq	%rbx
+ 483              	.LCFI8:
+ 484              		.cfi_def_cfa_offset 48
+ 485 015c 5D       		popq	%rbp
+ 486              	.LCFI9:
+ 487              		.cfi_def_cfa_offset 40
+ 488 015d 415C     		popq	%r12
+ 489              	.LCFI10:
+ 490              		.cfi_def_cfa_offset 32
+ 491 015f 415D     		popq	%r13
+ 492              	.LCFI11:
+ 493              		.cfi_def_cfa_offset 24
+ 494              	.LVL39:
+ 495 0161 415E     		popq	%r14
+ 496              	.LCFI12:
+ 497              		.cfi_def_cfa_offset 16
+ 498              	.LVL40:
+ 499 0163 415F     		popq	%r15
+ 500              	.LCFI13:
+ 501              		.cfi_def_cfa_offset 8
+ 502 0165 C3       		ret
+ 503              		.cfi_endproc
+ 504              	.LFE35:
+ 506              		.section	.text.find_val,"ax",@progbits
+ 508              	find_val:
+ 509              	.LFB36:
+GAS LISTING /tmp/ccL93DFv.s 			page 14
 
 
- 481              	.LVL44:
- 482 002c 4889EF   		movq	%rbp, %rdi
- 483              	.LVL45:
- 484 002f E8000000 		call	find_keyword
- 484      00
- 485              	.LVL46:
- 151:src/mcu_msg_parser.c ****     char *p;
- 152:src/mcu_msg_parser.c ****     if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
- 486              		.loc 1 152 0
- 487 0034 4885C0   		testq	%rax, %rax
- 488 0037 7431     		je	.L54
- 489 0039 4889C3   		movq	%rax, %rbx
- 153:src/mcu_msg_parser.c ****         res.name = NULL;
- 154:src/mcu_msg_parser.c ****         res.content = NULL;
- 155:src/mcu_msg_parser.c ****         res.name_len = 0;
- 156:src/mcu_msg_parser.c ****         res.content_len = 0;
- 157:src/mcu_msg_parser.c ****         return res;
- 158:src/mcu_msg_parser.c ****     }
- 159:src/mcu_msg_parser.c **** 
- 160:src/mcu_msg_parser.c ****     res.name = loc;
- 490              		.loc 1 160 0
- 491 003c 48890424 		movq	%rax, (%rsp)
- 161:src/mcu_msg_parser.c ****     res.name_len = str_len(obj);
- 492              		.loc 1 161 0
- 493 0040 4C89FF   		movq	%r15, %rdi
- 494 0043 E8000000 		call	str_len
- 494      00
- 495              	.LVL47:
- 496 0048 66894424 		movw	%ax, 16(%rsp)
- 496      10
- 162:src/mcu_msg_parser.c ****     p = loc + res.name_len;
- 497              		.loc 1 162 0
- 498 004d 0FB7C0   		movzwl	%ax, %eax
- 499 0050 4801D8   		addq	%rbx, %rax
- 500              	.LVL48:
- 163:src/mcu_msg_parser.c ****     if (*p != CTRL_START_OBJ) {
- 501              		.loc 1 163 0
- 502 0053 803828   		cmpb	$40, (%rax)
- 503 0056 7551     		jne	.L47
- 504              	.L48:
- 164:src/mcu_msg_parser.c ****         while(((p - msg) < (len - 1)) && *p != CTRL_START_OBJ) p++;
- 165:src/mcu_msg_parser.c ****     }
- 166:src/mcu_msg_parser.c ****     res.content = ++p;
- 505              		.loc 1 166 0
- 506 0058 4883C001 		addq	$1, %rax
- 507              	.LVL49:
- 508 005c 48894424 		movq	%rax, 8(%rsp)
- 508      08
- 167:src/mcu_msg_parser.c ****     res.content_len = 0;
- 509              		.loc 1 167 0
- 510 0061 66C74424 		movw	$0, 18(%rsp)
- 510      120000
- 168:src/mcu_msg_parser.c ****     while((p - msg) < len && *p != CTRL_STOP_OBJ) {
- 511              		.loc 1 168 0
- 512 0068 EB69     		jmp	.L50
- 513              	.LVL50:
- 514              	.L54:
-GAS LISTING /tmp/ccvnMFoE.s 			page 14
-
-
- 153:src/mcu_msg_parser.c ****         res.content = NULL;
- 515              		.loc 1 153 0
- 516 006a 48C70424 		movq	$0, (%rsp)
- 516      00000000 
- 154:src/mcu_msg_parser.c ****         res.name_len = 0;
- 517              		.loc 1 154 0
- 518 0072 48C74424 		movq	$0, 8(%rsp)
- 518      08000000 
- 518      00
- 155:src/mcu_msg_parser.c ****         res.content_len = 0;
- 519              		.loc 1 155 0
- 520 007b 66C74424 		movw	$0, 16(%rsp)
- 520      100000
- 156:src/mcu_msg_parser.c ****         return res;
- 521              		.loc 1 156 0
- 522 0082 66C74424 		movw	$0, 18(%rsp)
- 522      120000
- 157:src/mcu_msg_parser.c ****     }
- 523              		.loc 1 157 0
- 524 0089 488B0424 		movq	(%rsp), %rax
- 525              	.LVL51:
- 526 008d 488B5424 		movq	8(%rsp), %rdx
- 526      08
- 527 0092 49894500 		movq	%rax, 0(%r13)
- 528 0096 49895508 		movq	%rdx, 8(%r13)
- 529 009a 488B4424 		movq	16(%rsp), %rax
- 529      10
- 530 009f 49894510 		movq	%rax, 16(%r13)
- 531 00a3 EB5C     		jmp	.L44
- 532              	.LVL52:
- 533              	.L49:
- 164:src/mcu_msg_parser.c ****     }
- 534              		.loc 1 164 0 discriminator 3
- 535 00a5 4883C001 		addq	$1, %rax
- 536              	.LVL53:
- 537              	.L47:
- 164:src/mcu_msg_parser.c ****     }
- 538              		.loc 1 164 0 is_stmt 0 discriminator 1
- 539 00a9 4889C1   		movq	%rax, %rcx
- 540 00ac 4829E9   		subq	%rbp, %rcx
- 541 00af 418D56FF 		leal	-1(%r14), %edx
- 542 00b3 4863D2   		movslq	%edx, %rdx
- 543 00b6 4839D1   		cmpq	%rdx, %rcx
- 544 00b9 7D9D     		jge	.L48
- 164:src/mcu_msg_parser.c ****     }
- 545              		.loc 1 164 0 discriminator 2
- 546 00bb 803828   		cmpb	$40, (%rax)
- 547 00be 75E5     		jne	.L49
- 548 00c0 EB96     		jmp	.L48
- 549              	.L52:
- 169:src/mcu_msg_parser.c ****         p++;
- 550              		.loc 1 169 0 is_stmt 1
- 551 00c2 4883C001 		addq	$1, %rax
- 552              	.LVL54:
- 170:src/mcu_msg_parser.c ****         res.content_len++;
- 553              		.loc 1 170 0
- 554 00c6 0FB77424 		movzwl	18(%rsp), %esi
-GAS LISTING /tmp/ccvnMFoE.s 			page 15
-
-
- 554      12
- 555 00cb 8D5601   		leal	1(%rsi), %edx
- 556 00ce 66895424 		movw	%dx, 18(%rsp)
- 556      12
- 557              	.L50:
- 168:src/mcu_msg_parser.c ****         p++;
- 558              		.loc 1 168 0
- 559 00d3 4889C1   		movq	%rax, %rcx
- 560 00d6 4829E9   		subq	%rbp, %rcx
- 561 00d9 410FB7D4 		movzwl	%r12w, %edx
- 562 00dd 4839D1   		cmpq	%rdx, %rcx
- 563 00e0 7D05     		jge	.L51
- 168:src/mcu_msg_parser.c ****         p++;
- 564              		.loc 1 168 0 is_stmt 0 discriminator 1
- 565 00e2 803829   		cmpb	$41, (%rax)
- 566 00e5 75DB     		jne	.L52
- 567              	.L51:
- 171:src/mcu_msg_parser.c ****     }
- 172:src/mcu_msg_parser.c ****     return res;
- 568              		.loc 1 172 0 is_stmt 1
- 569 00e7 488B0424 		movq	(%rsp), %rax
- 570              	.LVL55:
- 571 00eb 488B5424 		movq	8(%rsp), %rdx
- 571      08
- 572 00f0 49894500 		movq	%rax, 0(%r13)
- 573 00f4 49895508 		movq	%rdx, 8(%r13)
- 574 00f8 488B4424 		movq	16(%rsp), %rax
- 574      10
- 575 00fd 49894510 		movq	%rax, 16(%r13)
- 576              	.LVL56:
- 577              	.L44:
- 173:src/mcu_msg_parser.c **** }
- 578              		.loc 1 173 0
- 579 0101 4C89E8   		movq	%r13, %rax
- 580 0104 4883C428 		addq	$40, %rsp
- 581              	.LCFI31:
- 582              		.cfi_def_cfa_offset 56
- 583 0108 5B       		popq	%rbx
- 584              	.LCFI32:
- 585              		.cfi_def_cfa_offset 48
- 586 0109 5D       		popq	%rbp
- 587              	.LCFI33:
- 588              		.cfi_def_cfa_offset 40
- 589              	.LVL57:
- 590 010a 415C     		popq	%r12
- 591              	.LCFI34:
- 592              		.cfi_def_cfa_offset 32
- 593              	.LVL58:
- 594 010c 415D     		popq	%r13
- 595              	.LCFI35:
- 596              		.cfi_def_cfa_offset 24
- 597              	.LVL59:
- 598 010e 415E     		popq	%r14
- 599              	.LCFI36:
- 600              		.cfi_def_cfa_offset 16
- 601              	.LVL60:
- 602 0110 415F     		popq	%r15
-GAS LISTING /tmp/ccvnMFoE.s 			page 16
-
-
- 603              	.LCFI37:
- 604              		.cfi_def_cfa_offset 8
- 605              	.LVL61:
- 606 0112 C3       		ret
- 607              		.cfi_endproc
- 608              	.LFE32:
- 610              		.section	.text.mcu_msg_parser_get_int,"ax",@progbits
- 611              		.globl	mcu_msg_parser_get_int
- 613              	mcu_msg_parser_get_int:
- 614              	.LFB33:
- 174:src/mcu_msg_parser.c **** 
- 175:src/mcu_msg_parser.c **** int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
- 176:src/mcu_msg_parser.c **** {
- 615              		.loc 1 176 0
- 616              		.cfi_startproc
- 617              	.LVL62:
- 618 0000 53       		pushq	%rbx
- 619              	.LCFI38:
- 620              		.cfi_def_cfa_offset 16
- 621              		.cfi_offset 3, -16
- 622 0001 4889FB   		movq	%rdi, %rbx
- 177:src/mcu_msg_parser.c ****     char *p = find_val(obj, key);
- 623              		.loc 1 177 0
- 624 0004 FF742420 		pushq	32(%rsp)
- 625              	.LCFI39:
- 626              		.cfi_def_cfa_offset 24
- 627 0008 FF742420 		pushq	32(%rsp)
- 628              	.LCFI40:
- 629              		.cfi_def_cfa_offset 32
- 630 000c FF742420 		pushq	32(%rsp)
- 631              	.LCFI41:
- 632              		.cfi_def_cfa_offset 40
- 633 0010 4889F7   		movq	%rsi, %rdi
- 634              	.LVL63:
- 635 0013 E8000000 		call	find_val
- 635      00
- 636              	.LVL64:
- 637 0018 4883C418 		addq	$24, %rsp
- 638              	.LCFI42:
- 639              		.cfi_def_cfa_offset 16
- 640              	.LVL65:
- 178:src/mcu_msg_parser.c ****     mcu_msg_size_t i;
- 179:src/mcu_msg_parser.c ****     unsigned m = 1;
- 180:src/mcu_msg_parser.c ****     int sign = 1;
- 181:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
- 182:src/mcu_msg_parser.c **** 
- 183:src/mcu_msg_parser.c ****     if(p == NULL)  //key nout found
- 641              		.loc 1 183 0
- 642 001c 4885C0   		testq	%rax, %rax
- 643 001f 0F849E00 		je	.L65
- 643      0000
- 184:src/mcu_msg_parser.c ****         return -1;
- 185:src/mcu_msg_parser.c **** 
- 186:src/mcu_msg_parser.c **** 
- 187:src/mcu_msg_parser.c ****     switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
- 644              		.loc 1 187 0
- 645 0025 0FB610   		movzbl	(%rax), %edx
-GAS LISTING /tmp/ccvnMFoE.s 			page 17
-
-
- 646 0028 80FA2B   		cmpb	$43, %dl
- 647 002b 740C     		je	.L58
- 648 002d 80FA2D   		cmpb	$45, %dl
- 649 0030 7445     		je	.L59
- 180:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
- 650              		.loc 1 180 0
- 651 0032 BF010000 		movl	$1, %edi
- 651      00
- 652 0037 EB09     		jmp	.L57
- 653              	.L58:
- 188:src/mcu_msg_parser.c ****         case '+':
- 189:src/mcu_msg_parser.c ****             sign = 1;
- 190:src/mcu_msg_parser.c ****             p++;
- 654              		.loc 1 190 0
- 655 0039 4883C001 		addq	$1, %rax
- 656              	.LVL66:
- 189:src/mcu_msg_parser.c ****             p++;
- 657              		.loc 1 189 0
- 658 003d BF010000 		movl	$1, %edi
- 658      00
- 659              	.LVL67:
- 660              	.L57:
- 191:src/mcu_msg_parser.c ****         break;
- 192:src/mcu_msg_parser.c ****         
- 193:src/mcu_msg_parser.c ****         case '-':
- 194:src/mcu_msg_parser.c ****             sign = -1;
- 195:src/mcu_msg_parser.c ****             p++;
- 196:src/mcu_msg_parser.c ****         break;
- 197:src/mcu_msg_parser.c ****         
- 198:src/mcu_msg_parser.c ****         default:
- 199:src/mcu_msg_parser.c ****         break;
- 200:src/mcu_msg_parser.c ****     }
- 201:src/mcu_msg_parser.c **** 
- 202:src/mcu_msg_parser.c ****     for(i = 0; (p - obj.content) < obj.content_len && *p != ' ' && *p != CTRL_KEY_SEP; i++, p++) { 
- 661              		.loc 1 202 0
- 662 0042 BE000000 		movl	$0, %esi
- 662      00
- 663              	.LVL68:
- 664              	.L60:
- 665              		.loc 1 202 0 is_stmt 0 discriminator 1
- 666 0047 4889C1   		movq	%rax, %rcx
- 667 004a 482B4C24 		subq	24(%rsp), %rcx
- 667      18
- 668 004f 0FB75424 		movzwl	34(%rsp), %edx
- 668      22
- 669 0054 4839D1   		cmpq	%rdx, %rcx
- 670 0057 7D29     		jge	.L61
- 671              		.loc 1 202 0 discriminator 3
- 672 0059 0FB610   		movzbl	(%rax), %edx
- 673 005c 80FA20   		cmpb	$32, %dl
- 674 005f 7421     		je	.L61
- 675              		.loc 1 202 0 discriminator 4
- 676 0061 80FA3B   		cmpb	$59, %dl
- 677 0064 741C     		je	.L61
- 203:src/mcu_msg_parser.c ****         if(*p < '0' || *p > '9') {    // if non valid number, return with error
- 678              		.loc 1 203 0 is_stmt 1
- 679 0066 83EA30   		subl	$48, %edx
-GAS LISTING /tmp/ccvnMFoE.s 			page 18
-
-
- 680 0069 80FA09   		cmpb	$9, %dl
- 681 006c 775C     		ja	.L67
- 202:src/mcu_msg_parser.c ****         if(*p < '0' || *p > '9') {    // if non valid number, return with error
- 682              		.loc 1 202 0 discriminator 2
- 683 006e 83C601   		addl	$1, %esi
- 684              	.LVL69:
- 685 0071 4883C001 		addq	$1, %rax
- 686              	.LVL70:
- 687 0075 EBD0     		jmp	.L60
- 688              	.LVL71:
- 689              	.L59:
- 195:src/mcu_msg_parser.c ****         break;
- 690              		.loc 1 195 0
- 691 0077 4883C001 		addq	$1, %rax
- 692              	.LVL72:
- 194:src/mcu_msg_parser.c ****             p++;
- 693              		.loc 1 194 0
- 694 007b BFFFFFFF 		movl	$-1, %edi
- 694      FF
- 196:src/mcu_msg_parser.c ****         
- 695              		.loc 1 196 0
- 696 0080 EBC0     		jmp	.L57
- 697              	.LVL73:
- 698              	.L61:
- 204:src/mcu_msg_parser.c ****             return -1;
- 205:src/mcu_msg_parser.c ****         }
- 206:src/mcu_msg_parser.c ****     }
- 207:src/mcu_msg_parser.c **** 
- 208:src/mcu_msg_parser.c ****     *res_val = 0;
- 699              		.loc 1 208 0
- 700 0082 C7030000 		movl	$0, (%rbx)
- 700      0000
- 209:src/mcu_msg_parser.c ****     --p;
- 701              		.loc 1 209 0
- 702 0088 488D50FF 		leaq	-1(%rax), %rdx
- 703              	.LVL74:
  181:src/mcu_msg_parser.c **** 
- 704              		.loc 1 181 0
- 705 008c B8000000 		movl	$0, %eax
- 705      00
- 179:src/mcu_msg_parser.c ****     int sign = 1;
- 706              		.loc 1 179 0
- 707 0091 B9010000 		movl	$1, %ecx
- 707      00
- 210:src/mcu_msg_parser.c ****     while(i--) {
- 708              		.loc 1 210 0
- 709 0096 EB1B     		jmp	.L63
- 710              	.LVL75:
- 711              	.L64:
- 211:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
- 712              		.loc 1 211 0
- 713 0098 0FBE32   		movsbl	(%rdx), %esi
- 714 009b 83EE30   		subl	$48, %esi
- 715 009e 0FAFF1   		imull	%ecx, %esi
- 716 00a1 0133     		addl	%esi, (%rbx)
- 212:src/mcu_msg_parser.c ****         m *= 10;
- 717              		.loc 1 212 0
-GAS LISTING /tmp/ccvnMFoE.s 			page 19
+ 182:src/mcu_msg_parser.c **** 
+ 183:src/mcu_msg_parser.c **** /**
+ 184:src/mcu_msg_parser.c ****  * @brief Getting the value start position for particular key in message object
+ 185:src/mcu_msg_parser.c ****  * 
+ 186:src/mcu_msg_parser.c ****  * @param obj message object
+ 187:src/mcu_msg_parser.c ****  * @param key key for search
+ 188:src/mcu_msg_parser.c ****  * @return char* location of the value start point or NULL if the key was not found
+ 189:src/mcu_msg_parser.c ****  */
+ 190:src/mcu_msg_parser.c **** static char *find_val(mcu_msg_obj_t obj, char *key)
+ 191:src/mcu_msg_parser.c **** {
+ 510              		.loc 1 191 0
+ 511              		.cfi_startproc
+ 512              	.LVL41:
+ 513 0000 4156     		pushq	%r14
+ 514              	.LCFI14:
+ 515              		.cfi_def_cfa_offset 16
+ 516              		.cfi_offset 14, -16
+ 517 0002 4155     		pushq	%r13
+ 518              	.LCFI15:
+ 519              		.cfi_def_cfa_offset 24
+ 520              		.cfi_offset 13, -24
+ 521 0004 4154     		pushq	%r12
+ 522              	.LCFI16:
+ 523              		.cfi_def_cfa_offset 32
+ 524              		.cfi_offset 12, -32
+ 525 0006 55       		pushq	%rbp
+ 526              	.LCFI17:
+ 527              		.cfi_def_cfa_offset 40
+ 528              		.cfi_offset 6, -40
+ 529 0007 53       		pushq	%rbx
+ 530              	.LCFI18:
+ 531              		.cfi_def_cfa_offset 48
+ 532              		.cfi_offset 3, -48
+ 533 0008 4989FE   		movq	%rdi, %r14
+ 192:src/mcu_msg_parser.c ****     char *loc = find_keyword(obj.content, obj.content_len, key, CTRL_KEY_FLAG, CTRL_KEY_EQU); //obj
+ 534              		.loc 1 192 0
+ 535 000b 440FB764 		movzwl	66(%rsp), %r12d
+ 535      2442
+ 536 0011 450FB7EC 		movzwl	%r12w, %r13d
+ 537 0015 488B6C24 		movq	56(%rsp), %rbp
+ 537      38
+ 538 001a 41B83D00 		movl	$61, %r8d
+ 538      0000
+ 539 0020 B9240000 		movl	$36, %ecx
+ 539      00
+ 540 0025 4889FA   		movq	%rdi, %rdx
+ 541 0028 4489EE   		movl	%r13d, %esi
+ 542 002b 4889EF   		movq	%rbp, %rdi
+ 543              	.LVL42:
+ 544 002e E8000000 		call	find_keyword
+ 544      00
+ 545              	.LVL43:
+ 546 0033 4889C3   		movq	%rax, %rbx
+ 547              	.LVL44:
+ 193:src/mcu_msg_parser.c ****     char *p;
+ 194:src/mcu_msg_parser.c ****     if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
+GAS LISTING /tmp/ccL93DFv.s 			page 15
 
 
- 718 00a3 8D3489   		leal	(%rcx,%rcx,4), %esi
- 719 00a6 8D0C36   		leal	(%rsi,%rsi), %ecx
- 720              	.LVL76:
- 213:src/mcu_msg_parser.c ****         res++;
- 721              		.loc 1 213 0
- 722 00a9 83C001   		addl	$1, %eax
- 723              	.LVL77:
- 210:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
- 724              		.loc 1 210 0
- 725 00ac 4489C6   		movl	%r8d, %esi
- 211:src/mcu_msg_parser.c ****         m *= 10;
- 726              		.loc 1 211 0
- 727 00af 488D52FF 		leaq	-1(%rdx), %rdx
- 728              	.LVL78:
- 729              	.L63:
- 210:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
- 730              		.loc 1 210 0
- 731 00b3 448D46FF 		leal	-1(%rsi), %r8d
- 732              	.LVL79:
- 733 00b7 6685F6   		testw	%si, %si
- 734 00ba 75DC     		jne	.L64
+ 548              		.loc 1 194 0
+ 549 0036 4885C0   		testq	%rax, %rax
+ 550 0039 7454     		je	.L46
+ 195:src/mcu_msg_parser.c ****         return NULL;
+ 196:src/mcu_msg_parser.c ****     }
+ 197:src/mcu_msg_parser.c ****     p = loc + str_len(key);
+ 551              		.loc 1 197 0
+ 552 003b 4C89F7   		movq	%r14, %rdi
+ 553 003e E8000000 		call	str_len
+ 553      00
+ 554              	.LVL45:
+ 555 0043 0FB7C0   		movzwl	%ax, %eax
+ 556 0046 4801C3   		addq	%rax, %rbx
+ 557              	.LVL46:
+ 198:src/mcu_msg_parser.c ****     if(*p != CTRL_KEY_EQU) {
+ 558              		.loc 1 198 0
+ 559 0049 803B3D   		cmpb	$61, (%rbx)
+ 560 004c 750A     		jne	.L48
+ 561              	.L49:
+ 199:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
+ 200:src/mcu_msg_parser.c ****     }
+ 201:src/mcu_msg_parser.c ****     p++;
+ 562              		.loc 1 201 0
+ 563 004e 4883C301 		addq	$1, %rbx
+ 564              	.LVL47:
+ 202:src/mcu_msg_parser.c ****     while((p - obj.content) < obj.content_len && is_whitespace(*p)) p++; //skip spaces after equal
+ 565              		.loc 1 202 0
+ 566 0052 EB20     		jmp	.L51
+ 567              	.L50:
+ 199:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
+ 568              		.loc 1 199 0 discriminator 3
+ 569 0054 4883C301 		addq	$1, %rbx
+ 570              	.LVL48:
+ 571              	.L48:
+ 199:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
+ 572              		.loc 1 199 0 is_stmt 0 discriminator 1
+ 573 0058 4889DA   		movq	%rbx, %rdx
+ 574 005b 4829EA   		subq	%rbp, %rdx
+ 575 005e 418D45FF 		leal	-1(%r13), %eax
+ 576 0062 4898     		cltq
+ 577 0064 4839C2   		cmpq	%rax, %rdx
+ 578 0067 7DE5     		jge	.L49
+ 199:src/mcu_msg_parser.c ****         while(((p - obj.content) < (obj.content_len - 1)) && *p != CTRL_KEY_EQU) p++;
+ 579              		.loc 1 199 0 discriminator 2
+ 580 0069 803B3D   		cmpb	$61, (%rbx)
+ 581 006c 75E6     		jne	.L50
+ 582 006e EBDE     		jmp	.L49
+ 583              	.L52:
+ 584              		.loc 1 202 0 is_stmt 1 discriminator 3
+ 585 0070 4883C301 		addq	$1, %rbx
+ 586              	.LVL49:
+ 587              	.L51:
+ 588              		.loc 1 202 0 is_stmt 0 discriminator 1
+ 589 0074 4889DA   		movq	%rbx, %rdx
+ 590 0077 4829EA   		subq	%rbp, %rdx
+ 591 007a 410FB7C4 		movzwl	%r12w, %eax
+ 592 007e 4839C2   		cmpq	%rax, %rdx
+GAS LISTING /tmp/ccL93DFv.s 			page 16
+
+
+ 593 0081 7D0C     		jge	.L46
+ 594              		.loc 1 202 0 discriminator 2
+ 595 0083 0FBE3B   		movsbl	(%rbx), %edi
+ 596 0086 E8000000 		call	is_whitespace
+ 596      00
+ 597              	.LVL50:
+ 598 008b 84C0     		testb	%al, %al
+ 599 008d 75E1     		jne	.L52
+ 600              	.LVL51:
+ 601              	.L46:
+ 203:src/mcu_msg_parser.c ****     return p;
+ 204:src/mcu_msg_parser.c **** }
+ 602              		.loc 1 204 0 is_stmt 1
+ 603 008f 4889D8   		movq	%rbx, %rax
+ 604 0092 5B       		popq	%rbx
+ 605              	.LCFI19:
+ 606              		.cfi_def_cfa_offset 40
+ 607 0093 5D       		popq	%rbp
+ 608              	.LCFI20:
+ 609              		.cfi_def_cfa_offset 32
+ 610 0094 415C     		popq	%r12
+ 611              	.LCFI21:
+ 612              		.cfi_def_cfa_offset 24
+ 613 0096 415D     		popq	%r13
+ 614              	.LCFI22:
+ 615              		.cfi_def_cfa_offset 16
+ 616 0098 415E     		popq	%r14
+ 617              	.LCFI23:
+ 618              		.cfi_def_cfa_offset 8
+ 619              	.LVL52:
+ 620 009a C3       		ret
+ 621              		.cfi_endproc
+ 622              	.LFE36:
+ 624              		.section	.text.mcu_msg_destroy,"ax",@progbits
+ 625              		.globl	mcu_msg_destroy
+ 627              	mcu_msg_destroy:
+ 628              	.LFB27:
+  29:src/mcu_msg_parser.c ****     msg->id = NULL;
+ 629              		.loc 1 29 0
+ 630              		.cfi_startproc
+ 631              	.LVL53:
+  30:src/mcu_msg_parser.c ****     msg->content = NULL;
+ 632              		.loc 1 30 0
+ 633 0000 48C70700 		movq	$0, (%rdi)
+ 633      000000
+  31:src/mcu_msg_parser.c ****     msg->id_len = 0;
+ 634              		.loc 1 31 0
+ 635 0007 48C74708 		movq	$0, 8(%rdi)
+ 635      00000000 
+  32:src/mcu_msg_parser.c ****     msg->content_len = 0;
+ 636              		.loc 1 32 0
+ 637 000f 66C74710 		movw	$0, 16(%rdi)
+ 637      0000
+  33:src/mcu_msg_parser.c **** }
+ 638              		.loc 1 33 0
+ 639 0015 66C74712 		movw	$0, 18(%rdi)
+ 639      0000
+GAS LISTING /tmp/ccL93DFv.s 			page 17
+
+
+  34:src/mcu_msg_parser.c **** 
+ 640              		.loc 1 34 0
+ 641 001b C3       		ret
+ 642              		.cfi_endproc
+ 643              	.LFE27:
+ 645              		.section	.text.mcu_msg_destroy_obj,"ax",@progbits
+ 646              		.globl	mcu_msg_destroy_obj
+ 648              	mcu_msg_destroy_obj:
+ 649              	.LFB28:
+  37:src/mcu_msg_parser.c ****     obj->id = NULL;
+ 650              		.loc 1 37 0
+ 651              		.cfi_startproc
+ 652              	.LVL54:
+  38:src/mcu_msg_parser.c ****     obj->content = NULL;
+ 653              		.loc 1 38 0
+ 654 0000 48C70700 		movq	$0, (%rdi)
+ 654      000000
+  39:src/mcu_msg_parser.c ****     obj->id_len = 0;
+ 655              		.loc 1 39 0
+ 656 0007 48C74708 		movq	$0, 8(%rdi)
+ 656      00000000 
+  40:src/mcu_msg_parser.c ****     obj->content_len = 0;
+ 657              		.loc 1 40 0
+ 658 000f 66C74710 		movw	$0, 16(%rdi)
+ 658      0000
+  41:src/mcu_msg_parser.c **** }
+ 659              		.loc 1 41 0
+ 660 0015 66C74712 		movw	$0, 18(%rdi)
+ 660      0000
+  42:src/mcu_msg_parser.c **** 
+ 661              		.loc 1 42 0
+ 662 001b C3       		ret
+ 663              		.cfi_endproc
+ 664              	.LFE28:
+ 666              		.section	.text.mcu_msg_destroy_string,"ax",@progbits
+ 667              		.globl	mcu_msg_destroy_string
+ 669              	mcu_msg_destroy_string:
+ 670              	.LFB29:
+  45:src/mcu_msg_parser.c ****     str->content = NULL;
+ 671              		.loc 1 45 0
+ 672              		.cfi_startproc
+ 673              	.LVL55:
+  46:src/mcu_msg_parser.c ****     str->len = 0;
+ 674              		.loc 1 46 0
+ 675 0000 48C70700 		movq	$0, (%rdi)
+ 675      000000
+  47:src/mcu_msg_parser.c **** }
+ 676              		.loc 1 47 0
+ 677 0007 66C74708 		movw	$0, 8(%rdi)
+ 677      0000
+  48:src/mcu_msg_parser.c **** 
+ 678              		.loc 1 48 0
+ 679 000d C3       		ret
+ 680              		.cfi_endproc
+ 681              	.LFE29:
+ 683              		.section	.text.mcu_msg_get,"ax",@progbits
+ 684              		.globl	mcu_msg_get
+GAS LISTING /tmp/ccL93DFv.s 			page 18
+
+
+ 686              	mcu_msg_get:
+ 687              	.LFB37:
+ 205:src/mcu_msg_parser.c **** 
+ 206:src/mcu_msg_parser.c **** 
+ 207:src/mcu_msg_parser.c **** mcu_msg_t mcu_msg_get(char *raw_str, char *id, mcu_msg_size_t len)
+ 208:src/mcu_msg_parser.c **** {
+ 688              		.loc 1 208 0
+ 689              		.cfi_startproc
+ 690              	.LVL56:
+ 691 0000 4157     		pushq	%r15
+ 692              	.LCFI24:
+ 693              		.cfi_def_cfa_offset 16
+ 694              		.cfi_offset 15, -16
+ 695 0002 4156     		pushq	%r14
+ 696              	.LCFI25:
+ 697              		.cfi_def_cfa_offset 24
+ 698              		.cfi_offset 14, -24
+ 699 0004 4155     		pushq	%r13
+ 700              	.LCFI26:
+ 701              		.cfi_def_cfa_offset 32
+ 702              		.cfi_offset 13, -32
+ 703 0006 4154     		pushq	%r12
+ 704              	.LCFI27:
+ 705              		.cfi_def_cfa_offset 40
+ 706              		.cfi_offset 12, -40
+ 707 0008 55       		pushq	%rbp
+ 708              	.LCFI28:
+ 709              		.cfi_def_cfa_offset 48
+ 710              		.cfi_offset 6, -48
+ 711 0009 53       		pushq	%rbx
+ 712              	.LCFI29:
+ 713              		.cfi_def_cfa_offset 56
+ 714              		.cfi_offset 3, -56
+ 715 000a 4883EC28 		subq	$40, %rsp
+ 716              	.LCFI30:
+ 717              		.cfi_def_cfa_offset 96
+ 718 000e 4989FD   		movq	%rdi, %r13
+ 719 0011 4889F5   		movq	%rsi, %rbp
+ 720 0014 4989D7   		movq	%rdx, %r15
+ 721 0017 4189CC   		movl	%ecx, %r12d
+ 722              		.loc 1 208 0
+ 723 001a 64488B04 		movq	%fs:40, %rax
+ 723      25280000 
+ 723      00
+ 724 0023 48894424 		movq	%rax, 24(%rsp)
+ 724      18
+ 725 0028 31C0     		xorl	%eax, %eax
+ 209:src/mcu_msg_parser.c ****     mcu_msg_t res;
+ 210:src/mcu_msg_parser.c ****     char *loc = find_keyword(raw_str, len, id, CTRL_MSG_FLAG, CTRL_START_MSG); //object start with 
+ 726              		.loc 1 210 0
+ 727 002a 440FB7F1 		movzwl	%cx, %r14d
+ 728 002e 41B87B00 		movl	$123, %r8d
+ 728      0000
+ 729 0034 B9230000 		movl	$35, %ecx
+ 729      00
+ 730              	.LVL57:
+ 731 0039 4489F6   		movl	%r14d, %esi
+GAS LISTING /tmp/ccL93DFv.s 			page 19
+
+
+ 732              	.LVL58:
+ 733 003c 4889EF   		movq	%rbp, %rdi
+ 734              	.LVL59:
+ 735 003f E8000000 		call	find_keyword
+ 735      00
+ 736              	.LVL60:
+ 211:src/mcu_msg_parser.c ****     char *p;
+ 212:src/mcu_msg_parser.c ****     if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
+ 737              		.loc 1 212 0
+ 738 0044 4885C0   		testq	%rax, %rax
+ 739 0047 7431     		je	.L68
+ 740 0049 4889C3   		movq	%rax, %rbx
+ 213:src/mcu_msg_parser.c ****         mcu_msg_destroy(&res);
+ 214:src/mcu_msg_parser.c ****         return res;
+ 215:src/mcu_msg_parser.c ****     }
+ 216:src/mcu_msg_parser.c ****     res.id = loc;
+ 741              		.loc 1 216 0
+ 742 004c 48890424 		movq	%rax, (%rsp)
+ 217:src/mcu_msg_parser.c ****     res.id_len = str_len(id);
+ 743              		.loc 1 217 0
+ 744 0050 4C89FF   		movq	%r15, %rdi
+ 745 0053 E8000000 		call	str_len
+ 745      00
+ 746              	.LVL61:
+ 747 0058 66894424 		movw	%ax, 16(%rsp)
+ 747      10
+ 218:src/mcu_msg_parser.c ****     p = loc + res.id_len;
+ 748              		.loc 1 218 0
+ 749 005d 0FB7C0   		movzwl	%ax, %eax
+ 750 0060 4801D8   		addq	%rbx, %rax
+ 751              	.LVL62:
+ 219:src/mcu_msg_parser.c ****     if (*p != CTRL_START_MSG) {
+ 752              		.loc 1 219 0
+ 753 0063 80387B   		cmpb	$123, (%rax)
+ 754 0066 753A     		jne	.L60
+ 755              	.L61:
+ 220:src/mcu_msg_parser.c ****         while(((p - raw_str) < (len - 1)) && *p != CTRL_START_MSG) p++;
+ 221:src/mcu_msg_parser.c ****     }
+ 222:src/mcu_msg_parser.c ****     res.content = ++p;
+ 756              		.loc 1 222 0
+ 757 0068 4883C001 		addq	$1, %rax
+ 758              	.LVL63:
+ 759 006c 48894424 		movq	%rax, 8(%rsp)
+ 759      08
+ 223:src/mcu_msg_parser.c ****     res.content_len = 0;
+ 760              		.loc 1 223 0
+ 761 0071 66C74424 		movw	$0, 18(%rsp)
+ 761      120000
+ 224:src/mcu_msg_parser.c ****     while((p - raw_str) < len && *p != CTRL_STOP_MSG) {
+ 762              		.loc 1 224 0
+ 763 0078 EB52     		jmp	.L63
+ 764              	.LVL64:
+ 765              	.L68:
+ 213:src/mcu_msg_parser.c ****         return res;
+ 766              		.loc 1 213 0
+ 767 007a 4889E7   		movq	%rsp, %rdi
+ 768 007d E8000000 		call	mcu_msg_destroy
+GAS LISTING /tmp/ccL93DFv.s 			page 20
+
+
+ 768      00
+ 769              	.LVL65:
  214:src/mcu_msg_parser.c ****     }
- 215:src/mcu_msg_parser.c ****     
- 216:src/mcu_msg_parser.c ****     *res_val *= sign; //corrigate with the sign
- 735              		.loc 1 216 0
- 736 00bc 0FAF3B   		imull	(%rbx), %edi
- 737              	.LVL80:
- 738 00bf 893B     		movl	%edi, (%rbx)
- 739              	.LVL81:
- 740              	.L55:
- 217:src/mcu_msg_parser.c **** 
- 218:src/mcu_msg_parser.c ****     return res; // return with the digit count, if correct
- 219:src/mcu_msg_parser.c **** }
- 741              		.loc 1 219 0
- 742 00c1 5B       		popq	%rbx
- 743              	.LCFI43:
- 744              		.cfi_remember_state
- 745              		.cfi_def_cfa_offset 8
- 746              	.LVL82:
- 747 00c2 C3       		ret
- 748              	.LVL83:
- 749              	.L65:
- 750              	.LCFI44:
- 751              		.cfi_restore_state
- 184:src/mcu_msg_parser.c **** 
- 752              		.loc 1 184 0
- 753 00c3 B8FFFFFF 		movl	$-1, %eax
- 753      FF
- 754              	.LVL84:
- 755 00c8 EBF7     		jmp	.L55
- 756              	.LVL85:
- 757              	.L67:
- 204:src/mcu_msg_parser.c ****         }
- 758              		.loc 1 204 0
- 759 00ca B8FFFFFF 		movl	$-1, %eax
- 759      FF
- 760              	.LVL86:
-GAS LISTING /tmp/ccvnMFoE.s 			page 20
+ 770              		.loc 1 214 0
+ 771 0082 488B0424 		movq	(%rsp), %rax
+ 772 0086 488B5424 		movq	8(%rsp), %rdx
+ 772      08
+ 773 008b 49894500 		movq	%rax, 0(%r13)
+ 774 008f 49895508 		movq	%rdx, 8(%r13)
+ 775 0093 488B4424 		movq	16(%rsp), %rax
+ 775      10
+ 776 0098 49894510 		movq	%rax, 16(%r13)
+ 777 009c EB5C     		jmp	.L57
+ 778              	.LVL66:
+ 779              	.L62:
+ 220:src/mcu_msg_parser.c ****     }
+ 780              		.loc 1 220 0 discriminator 3
+ 781 009e 4883C001 		addq	$1, %rax
+ 782              	.LVL67:
+ 783              	.L60:
+ 220:src/mcu_msg_parser.c ****     }
+ 784              		.loc 1 220 0 is_stmt 0 discriminator 1
+ 785 00a2 4889C1   		movq	%rax, %rcx
+ 786 00a5 4829E9   		subq	%rbp, %rcx
+ 787 00a8 418D56FF 		leal	-1(%r14), %edx
+ 788 00ac 4863D2   		movslq	%edx, %rdx
+ 789 00af 4839D1   		cmpq	%rdx, %rcx
+ 790 00b2 7DB4     		jge	.L61
+ 220:src/mcu_msg_parser.c ****     }
+ 791              		.loc 1 220 0 discriminator 2
+ 792 00b4 80387B   		cmpb	$123, (%rax)
+ 793 00b7 75E5     		jne	.L62
+ 794 00b9 EBAD     		jmp	.L61
+ 795              	.L65:
+ 225:src/mcu_msg_parser.c ****         p++;
+ 796              		.loc 1 225 0 is_stmt 1
+ 797 00bb 4883C001 		addq	$1, %rax
+ 798              	.LVL68:
+ 226:src/mcu_msg_parser.c ****         res.content_len++;
+ 799              		.loc 1 226 0
+ 800 00bf 0FB77424 		movzwl	18(%rsp), %esi
+ 800      12
+ 801 00c4 8D5601   		leal	1(%rsi), %edx
+ 802 00c7 66895424 		movw	%dx, 18(%rsp)
+ 802      12
+ 803              	.L63:
+ 224:src/mcu_msg_parser.c ****         p++;
+ 804              		.loc 1 224 0
+ 805 00cc 4889C1   		movq	%rax, %rcx
+ 806 00cf 4829E9   		subq	%rbp, %rcx
+ 807 00d2 410FB7D4 		movzwl	%r12w, %edx
+ 808 00d6 4839D1   		cmpq	%rdx, %rcx
+ 809 00d9 7D05     		jge	.L64
+ 224:src/mcu_msg_parser.c ****         p++;
+ 810              		.loc 1 224 0 is_stmt 0 discriminator 1
+ 811 00db 80387D   		cmpb	$125, (%rax)
+ 812 00de 75DB     		jne	.L65
+GAS LISTING /tmp/ccL93DFv.s 			page 21
 
 
- 761 00cf EBF0     		jmp	.L55
- 762              		.cfi_endproc
- 763              	.LFE33:
- 765              		.section	.text.mcu_msg_parser_get_float,"ax",@progbits
- 766              		.globl	mcu_msg_parser_get_float
- 768              	mcu_msg_parser_get_float:
- 769              	.LFB34:
- 220:src/mcu_msg_parser.c **** 
- 221:src/mcu_msg_parser.c **** 
- 222:src/mcu_msg_parser.c **** int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
- 223:src/mcu_msg_parser.c **** {
- 770              		.loc 1 223 0
- 771              		.cfi_startproc
- 772              	.LVL87:
- 773 0000 55       		pushq	%rbp
- 774              	.LCFI45:
- 775              		.cfi_def_cfa_offset 16
- 776              		.cfi_offset 6, -16
- 777 0001 53       		pushq	%rbx
- 778              	.LCFI46:
- 779              		.cfi_def_cfa_offset 24
- 780              		.cfi_offset 3, -24
- 781 0002 4889FB   		movq	%rdi, %rbx
- 224:src/mcu_msg_parser.c ****     char *p = find_val(obj, key);
- 782              		.loc 1 224 0
- 783 0005 FF742428 		pushq	40(%rsp)
- 784              	.LCFI47:
- 785              		.cfi_def_cfa_offset 32
- 786 0009 FF742428 		pushq	40(%rsp)
- 787              	.LCFI48:
- 788              		.cfi_def_cfa_offset 40
- 789 000d FF742428 		pushq	40(%rsp)
- 790              	.LCFI49:
- 791              		.cfi_def_cfa_offset 48
- 792 0011 4889F7   		movq	%rsi, %rdi
- 793              	.LVL88:
- 794 0014 E8000000 		call	find_val
- 794      00
- 795              	.LVL89:
- 796 0019 4883C418 		addq	$24, %rsp
- 797              	.LCFI50:
- 798              		.cfi_def_cfa_offset 24
- 799              	.LVL90:
- 225:src/mcu_msg_parser.c ****     char *pf;
- 226:src/mcu_msg_parser.c ****     mcu_msg_size_t i;
- 227:src/mcu_msg_parser.c ****     unsigned m = 1;
- 228:src/mcu_msg_parser.c ****     float mf = 0.1;
- 229:src/mcu_msg_parser.c ****     int sign = 1;
- 230:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
- 231:src/mcu_msg_parser.c **** 
- 232:src/mcu_msg_parser.c ****     if(p == NULL)  //key nout found
- 800              		.loc 1 232 0
- 801 001d 4885C0   		testq	%rax, %rax
- 802 0020 0F843E01 		je	.L86
- 802      0000
- 803 0026 4989C2   		movq	%rax, %r10
- 233:src/mcu_msg_parser.c ****         return -1;
-GAS LISTING /tmp/ccvnMFoE.s 			page 21
+ 813              	.L64:
+ 227:src/mcu_msg_parser.c ****     }
+ 228:src/mcu_msg_parser.c ****     return res;
+ 814              		.loc 1 228 0 is_stmt 1
+ 815 00e0 488B0424 		movq	(%rsp), %rax
+ 816              	.LVL69:
+ 817 00e4 488B5424 		movq	8(%rsp), %rdx
+ 817      08
+ 818 00e9 49894500 		movq	%rax, 0(%r13)
+ 819 00ed 49895508 		movq	%rdx, 8(%r13)
+ 820 00f1 488B4424 		movq	16(%rsp), %rax
+ 820      10
+ 821 00f6 49894510 		movq	%rax, 16(%r13)
+ 822              	.LVL70:
+ 823              	.L57:
+ 229:src/mcu_msg_parser.c **** }
+ 824              		.loc 1 229 0
+ 825 00fa 4C89E8   		movq	%r13, %rax
+ 826 00fd 488B5C24 		movq	24(%rsp), %rbx
+ 826      18
+ 827 0102 6448331C 		xorq	%fs:40, %rbx
+ 827      25280000 
+ 827      00
+ 828 010b 750F     		jne	.L69
+ 829              	.LVL71:
+ 830 010d 4883C428 		addq	$40, %rsp
+ 831              	.LCFI31:
+ 832              		.cfi_remember_state
+ 833              		.cfi_def_cfa_offset 56
+ 834 0111 5B       		popq	%rbx
+ 835              	.LCFI32:
+ 836              		.cfi_def_cfa_offset 48
+ 837 0112 5D       		popq	%rbp
+ 838              	.LCFI33:
+ 839              		.cfi_def_cfa_offset 40
+ 840              	.LVL72:
+ 841 0113 415C     		popq	%r12
+ 842              	.LCFI34:
+ 843              		.cfi_def_cfa_offset 32
+ 844              	.LVL73:
+ 845 0115 415D     		popq	%r13
+ 846              	.LCFI35:
+ 847              		.cfi_def_cfa_offset 24
+ 848 0117 415E     		popq	%r14
+ 849              	.LCFI36:
+ 850              		.cfi_def_cfa_offset 16
+ 851              	.LVL74:
+ 852 0119 415F     		popq	%r15
+ 853              	.LCFI37:
+ 854              		.cfi_def_cfa_offset 8
+ 855              	.LVL75:
+ 856 011b C3       		ret
+ 857              	.LVL76:
+ 858              	.L69:
+ 859              	.LCFI38:
+ 860              		.cfi_restore_state
+ 861 011c E8000000 		call	__stack_chk_fail@PLT
+GAS LISTING /tmp/ccL93DFv.s 			page 22
 
 
- 234:src/mcu_msg_parser.c **** 
- 235:src/mcu_msg_parser.c **** 
- 236:src/mcu_msg_parser.c ****     switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
- 804              		.loc 1 236 0
- 805 0029 0FB600   		movzbl	(%rax), %eax
- 806              	.LVL91:
- 807 002c 3C2B     		cmpb	$43, %al
- 808 002e 740C     		je	.L73
- 809 0030 3C2D     		cmpb	$45, %al
- 810 0032 7457     		je	.L74
- 229:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
- 811              		.loc 1 229 0
- 812 0034 41B80100 		movl	$1, %r8d
- 812      0000
- 813 003a EB0A     		jmp	.L72
- 814              	.L73:
- 237:src/mcu_msg_parser.c ****         case '+':
- 238:src/mcu_msg_parser.c ****             sign = 1;
- 239:src/mcu_msg_parser.c ****             p++;
- 815              		.loc 1 239 0
- 816 003c 4983C201 		addq	$1, %r10
- 817              	.LVL92:
- 238:src/mcu_msg_parser.c ****             p++;
- 818              		.loc 1 238 0
- 819 0040 41B80100 		movl	$1, %r8d
- 819      0000
- 820              	.LVL93:
- 821              	.L72:
- 240:src/mcu_msg_parser.c ****         break;
- 241:src/mcu_msg_parser.c ****         
- 242:src/mcu_msg_parser.c ****         case '-':
- 243:src/mcu_msg_parser.c ****             sign = -1;
- 244:src/mcu_msg_parser.c ****             p++;
- 245:src/mcu_msg_parser.c ****         break;
- 246:src/mcu_msg_parser.c ****         
- 247:src/mcu_msg_parser.c ****         default:
- 248:src/mcu_msg_parser.c ****         break;
- 249:src/mcu_msg_parser.c ****     }
- 250:src/mcu_msg_parser.c **** 
- 251:src/mcu_msg_parser.c ****     //move p to dec separator or end of the value
- 252:src/mcu_msg_parser.c ****     for(i = 0; (p - obj.content) < obj.content_len && *p != ' ' && *p != CTRL_KEY_SEP && *p != '.';
- 822              		.loc 1 252 0
- 823 0046 41BB0000 		movl	$0, %r11d
- 823      0000
- 824              	.LVL94:
- 825              	.L75:
- 826              		.loc 1 252 0 is_stmt 0 discriminator 1
- 827 004c 488B7C24 		movq	32(%rsp), %rdi
- 827      20
- 828 0051 4C89D0   		movq	%r10, %rax
- 829 0054 4829F8   		subq	%rdi, %rax
- 830 0057 440FB74C 		movzwl	42(%rsp), %r9d
- 830      242A
- 831 005d 4C39C8   		cmpq	%r9, %rax
- 832 0060 7D35     		jge	.L76
- 833              		.loc 1 252 0 discriminator 3
- 834 0062 410FB612 		movzbl	(%r10), %edx
-GAS LISTING /tmp/ccvnMFoE.s 			page 22
-
-
- 835 0066 80FA20   		cmpb	$32, %dl
- 836 0069 742C     		je	.L76
- 837              		.loc 1 252 0 discriminator 4
- 838 006b 80FA3B   		cmpb	$59, %dl
- 839 006e 7427     		je	.L76
- 840              		.loc 1 252 0 discriminator 5
- 841 0070 80FA2E   		cmpb	$46, %dl
- 842 0073 7422     		je	.L76
- 253:src/mcu_msg_parser.c ****         if((*p < '0' || *p > '9')) {    // if non valid number, return with error
- 843              		.loc 1 253 0 is_stmt 1
- 844 0075 83EA30   		subl	$48, %edx
- 845 0078 80FA09   		cmpb	$9, %dl
- 846 007b 0F87EA00 		ja	.L88
- 846      0000
- 252:src/mcu_msg_parser.c ****         if((*p < '0' || *p > '9')) {    // if non valid number, return with error
- 847              		.loc 1 252 0 discriminator 2
- 848 0081 4183C301 		addl	$1, %r11d
- 849              	.LVL95:
- 850 0085 4983C201 		addq	$1, %r10
- 851              	.LVL96:
- 852 0089 EBC1     		jmp	.L75
- 853              	.LVL97:
- 854              	.L74:
- 244:src/mcu_msg_parser.c ****         break;
- 855              		.loc 1 244 0
- 856 008b 4983C201 		addq	$1, %r10
- 857              	.LVL98:
- 243:src/mcu_msg_parser.c ****             p++;
- 858              		.loc 1 243 0
- 859 008f 41B8FFFF 		movl	$-1, %r8d
- 859      FFFF
- 245:src/mcu_msg_parser.c ****         
- 860              		.loc 1 245 0
- 861 0095 EBAF     		jmp	.L72
- 862              	.LVL99:
- 863              	.L76:
- 254:src/mcu_msg_parser.c ****             return -1;
- 255:src/mcu_msg_parser.c ****         }
- 256:src/mcu_msg_parser.c ****     }
- 257:src/mcu_msg_parser.c **** 
- 258:src/mcu_msg_parser.c ****     *res_val = 0.0;
- 864              		.loc 1 258 0
- 865 0097 C7030000 		movl	$0x00000000, (%rbx)
- 865      0000
- 259:src/mcu_msg_parser.c ****     
- 260:src/mcu_msg_parser.c ****     if(*p == '.') {
- 866              		.loc 1 260 0
- 867 009d 41803A2E 		cmpb	$46, (%r10)
- 868 00a1 7415     		je	.L93
+ 861      00
+ 862              	.LVL77:
+ 863              		.cfi_endproc
+ 864              	.LFE37:
+ 866              		.section	.text.mcu_msg_parser_get_obj,"ax",@progbits
+ 867              		.globl	mcu_msg_parser_get_obj
+ 869              	mcu_msg_parser_get_obj:
+ 870              	.LFB38:
  230:src/mcu_msg_parser.c **** 
- 869              		.loc 1 230 0
- 870 00a3 B8000000 		movl	$0, %eax
- 870      00
- 261:src/mcu_msg_parser.c ****         pf = p + 1;
- 262:src/mcu_msg_parser.c ****         res++;
- 263:src/mcu_msg_parser.c ****     } else {
- 264:src/mcu_msg_parser.c ****         pf = NULL;
-GAS LISTING /tmp/ccvnMFoE.s 			page 23
+ 231:src/mcu_msg_parser.c **** 
+ 232:src/mcu_msg_parser.c **** 
+ 233:src/mcu_msg_parser.c **** mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id)
+ 234:src/mcu_msg_parser.c **** {
+ 871              		.loc 1 234 0
+ 872              		.cfi_startproc
+ 873              	.LVL78:
+ 874 0000 4157     		pushq	%r15
+ 875              	.LCFI39:
+ 876              		.cfi_def_cfa_offset 16
+ 877              		.cfi_offset 15, -16
+ 878 0002 4156     		pushq	%r14
+ 879              	.LCFI40:
+ 880              		.cfi_def_cfa_offset 24
+ 881              		.cfi_offset 14, -24
+ 882 0004 4155     		pushq	%r13
+ 883              	.LCFI41:
+ 884              		.cfi_def_cfa_offset 32
+ 885              		.cfi_offset 13, -32
+ 886 0006 4154     		pushq	%r12
+ 887              	.LCFI42:
+ 888              		.cfi_def_cfa_offset 40
+ 889              		.cfi_offset 12, -40
+ 890 0008 55       		pushq	%rbp
+ 891              	.LCFI43:
+ 892              		.cfi_def_cfa_offset 48
+ 893              		.cfi_offset 6, -48
+ 894 0009 53       		pushq	%rbx
+ 895              	.LCFI44:
+ 896              		.cfi_def_cfa_offset 56
+ 897              		.cfi_offset 3, -56
+ 898 000a 4883EC28 		subq	$40, %rsp
+ 899              	.LCFI45:
+ 900              		.cfi_def_cfa_offset 96
+ 901 000e 4989FD   		movq	%rdi, %r13
+ 902 0011 4989F7   		movq	%rsi, %r15
+ 903              		.loc 1 234 0
+ 904 0014 64488B04 		movq	%fs:40, %rax
+ 904      25280000 
+ 904      00
+ 905 001d 48894424 		movq	%rax, 24(%rsp)
+ 905      18
+ 906 0022 31C0     		xorl	%eax, %eax
+ 235:src/mcu_msg_parser.c ****     mcu_msg_obj_t res;
+ 236:src/mcu_msg_parser.c ****     char *loc = find_keyword(msg.content, msg.content_len, id, CTRL_OBJ_FLAG, CTRL_START_OBJ); //ob
+ 907              		.loc 1 236 0
+ 908 0024 440FB764 		movzwl	114(%rsp), %r12d
+ 908      2472
+GAS LISTING /tmp/ccL93DFv.s 			page 23
 
 
- 871              		.loc 1 264 0
- 872 00a8 BE000000 		movl	$0, %esi
- 872      00
- 873              	.LVL100:
- 874              	.L78:
- 265:src/mcu_msg_parser.c ****     }
- 266:src/mcu_msg_parser.c **** 
- 267:src/mcu_msg_parser.c ****     --p;
- 875              		.loc 1 267 0
- 876 00ad 4983EA01 		subq	$1, %r10
- 877              	.LVL101:
- 227:src/mcu_msg_parser.c ****     float mf = 0.1;
- 878              		.loc 1 227 0
- 879 00b1 B9010000 		movl	$1, %ecx
- 879      00
- 268:src/mcu_msg_parser.c ****     while(i--) {
- 880              		.loc 1 268 0
- 881 00b6 EB36     		jmp	.L79
- 882              	.LVL102:
- 883              	.L93:
- 261:src/mcu_msg_parser.c ****         res++;
- 884              		.loc 1 261 0
- 885 00b8 498D7201 		leaq	1(%r10), %rsi
- 886              	.LVL103:
- 262:src/mcu_msg_parser.c ****     } else {
- 887              		.loc 1 262 0
- 888 00bc B8010000 		movl	$1, %eax
- 888      00
- 889 00c1 EBEA     		jmp	.L78
- 890              	.LVL104:
- 891              	.L82:
- 269:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
- 892              		.loc 1 269 0
- 893 00c3 410FBE12 		movsbl	(%r10), %edx
- 894 00c7 83EA30   		subl	$48, %edx
- 895 00ca 0FAFD1   		imull	%ecx, %edx
- 896 00cd 660FEFC0 		pxor	%xmm0, %xmm0
- 897 00d1 F3480F2A 		cvtsi2ssq	%rdx, %xmm0
- 897      C2
- 898 00d6 F30F5803 		addss	(%rbx), %xmm0
- 899 00da F30F1103 		movss	%xmm0, (%rbx)
- 270:src/mcu_msg_parser.c ****         m *= 10;
- 900              		.loc 1 270 0
- 901 00de 8D1489   		leal	(%rcx,%rcx,4), %edx
- 902 00e1 8D0C12   		leal	(%rdx,%rdx), %ecx
- 903              	.LVL105:
- 271:src/mcu_msg_parser.c ****         res++;
- 904              		.loc 1 271 0
- 905 00e4 83C001   		addl	$1, %eax
- 906              	.LVL106:
- 268:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
- 907              		.loc 1 268 0
- 908 00e7 4189EB   		movl	%ebp, %r11d
- 269:src/mcu_msg_parser.c ****         m *= 10;
- 909              		.loc 1 269 0
- 910 00ea 4D8D52FF 		leaq	-1(%r10), %r10
- 911              	.LVL107:
-GAS LISTING /tmp/ccvnMFoE.s 			page 24
+ 909 002a 450FB7F4 		movzwl	%r12w, %r14d
+ 910 002e 488B6C24 		movq	104(%rsp), %rbp
+ 910      68
+ 911 0033 41B82800 		movl	$40, %r8d
+ 911      0000
+ 912 0039 B9400000 		movl	$64, %ecx
+ 912      00
+ 913 003e 4889F2   		movq	%rsi, %rdx
+ 914 0041 4489F6   		movl	%r14d, %esi
+ 915              	.LVL79:
+ 916 0044 4889EF   		movq	%rbp, %rdi
+ 917              	.LVL80:
+ 918 0047 E8000000 		call	find_keyword
+ 918      00
+ 919              	.LVL81:
+ 237:src/mcu_msg_parser.c ****     char *p;
+ 238:src/mcu_msg_parser.c ****     if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
+ 920              		.loc 1 238 0
+ 921 004c 4885C0   		testq	%rax, %rax
+ 922 004f 7431     		je	.L81
+ 923 0051 4889C3   		movq	%rax, %rbx
+ 239:src/mcu_msg_parser.c ****         mcu_msg_destroy_obj(&res);
+ 240:src/mcu_msg_parser.c ****         return res;
+ 241:src/mcu_msg_parser.c ****     }
+ 242:src/mcu_msg_parser.c **** 
+ 243:src/mcu_msg_parser.c ****     res.id = loc;
+ 924              		.loc 1 243 0
+ 925 0054 48890424 		movq	%rax, (%rsp)
+ 244:src/mcu_msg_parser.c ****     res.id_len = str_len(id);
+ 926              		.loc 1 244 0
+ 927 0058 4C89FF   		movq	%r15, %rdi
+ 928 005b E8000000 		call	str_len
+ 928      00
+ 929              	.LVL82:
+ 930 0060 66894424 		movw	%ax, 16(%rsp)
+ 930      10
+ 245:src/mcu_msg_parser.c ****     p = loc + res.id_len;
+ 931              		.loc 1 245 0
+ 932 0065 0FB7C0   		movzwl	%ax, %eax
+ 933 0068 4801D8   		addq	%rbx, %rax
+ 934              	.LVL83:
+ 246:src/mcu_msg_parser.c ****     if (*p != CTRL_START_OBJ) {
+ 935              		.loc 1 246 0
+ 936 006b 803828   		cmpb	$40, (%rax)
+ 937 006e 753A     		jne	.L73
+ 938              	.L74:
+ 247:src/mcu_msg_parser.c ****         while(((p - msg.content) < (msg.content_len - 1)) && *p != CTRL_START_OBJ) p++;
+ 248:src/mcu_msg_parser.c ****     }
+ 249:src/mcu_msg_parser.c ****     res.content = ++p;
+ 939              		.loc 1 249 0
+ 940 0070 4883C001 		addq	$1, %rax
+ 941              	.LVL84:
+ 942 0074 48894424 		movq	%rax, 8(%rsp)
+ 942      08
+ 250:src/mcu_msg_parser.c ****     res.content_len = 0;
+ 943              		.loc 1 250 0
+ 944 0079 66C74424 		movw	$0, 18(%rsp)
+GAS LISTING /tmp/ccL93DFv.s 			page 24
 
 
- 912              	.L79:
- 268:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
- 913              		.loc 1 268 0
- 914 00ee 418D6BFF 		leal	-1(%r11), %ebp
- 915              	.LVL108:
- 916 00f2 664585DB 		testw	%r11w, %r11w
- 917 00f6 75CB     		jne	.L82
- 228:src/mcu_msg_parser.c ****     int sign = 1;
- 918              		.loc 1 228 0
- 919 00f8 F30F100D 		movss	.LC0(%rip), %xmm1
- 919      00000000 
- 920              	.LVL109:
- 921              	.L83:
- 272:src/mcu_msg_parser.c ****     }
- 273:src/mcu_msg_parser.c ****     
- 274:src/mcu_msg_parser.c ****     // calculate floating point section after '.' (if there is)
- 275:src/mcu_msg_parser.c ****     for(; pf != NULL && (pf - obj.content) < obj.content_len && *pf != ' ' && *pf != CTRL_KEY_SEP; 
- 922              		.loc 1 275 0 discriminator 1
- 923 0100 4885F6   		testq	%rsi, %rsi
- 924 0103 744B     		je	.L84
- 925              		.loc 1 275 0 is_stmt 0 discriminator 2
- 926 0105 4889F2   		movq	%rsi, %rdx
- 927 0108 4829FA   		subq	%rdi, %rdx
- 928 010b 4939D1   		cmpq	%rdx, %r9
- 929 010e 7E40     		jle	.L84
- 930              		.loc 1 275 0 discriminator 3
- 931 0110 0FB616   		movzbl	(%rsi), %edx
- 932 0113 80FA20   		cmpb	$32, %dl
- 933 0116 7438     		je	.L84
- 934              		.loc 1 275 0 discriminator 4
- 935 0118 80FA3B   		cmpb	$59, %dl
- 936 011b 7433     		je	.L84
- 276:src/mcu_msg_parser.c ****         if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
- 937              		.loc 1 276 0 is_stmt 1
- 938 011d 8D4AD0   		leal	-48(%rdx), %ecx
- 939 0120 80F909   		cmpb	$9, %cl
- 940 0123 774D     		ja	.L90
- 277:src/mcu_msg_parser.c ****             return -1;
- 278:src/mcu_msg_parser.c ****         }
- 279:src/mcu_msg_parser.c ****         *res_val += (*pf - '0') * mf;
- 941              		.loc 1 279 0
- 942 0125 0FBED2   		movsbl	%dl, %edx
- 943 0128 83EA30   		subl	$48, %edx
- 944 012b 660FEFC0 		pxor	%xmm0, %xmm0
- 945 012f F30F2AC2 		cvtsi2ss	%edx, %xmm0
- 946 0133 F30F59C1 		mulss	%xmm1, %xmm0
- 947 0137 F30F5803 		addss	(%rbx), %xmm0
- 948 013b F30F1103 		movss	%xmm0, (%rbx)
- 280:src/mcu_msg_parser.c ****         mf /= 10;
- 949              		.loc 1 280 0
- 950 013f F30F5E0D 		divss	.LC2(%rip), %xmm1
- 950      00000000 
- 951              	.LVL110:
- 281:src/mcu_msg_parser.c ****         res++; 
- 952              		.loc 1 281 0
- 953 0147 83C001   		addl	$1, %eax
- 954              	.LVL111:
-GAS LISTING /tmp/ccvnMFoE.s 			page 25
+ 944      120000
+ 251:src/mcu_msg_parser.c ****     while((p - msg.content) < msg.content_len && *p != CTRL_STOP_OBJ) {
+ 945              		.loc 1 251 0
+ 946 0080 EB52     		jmp	.L76
+ 947              	.LVL85:
+ 948              	.L81:
+ 239:src/mcu_msg_parser.c ****         return res;
+ 949              		.loc 1 239 0
+ 950 0082 4889E7   		movq	%rsp, %rdi
+ 951 0085 E8000000 		call	mcu_msg_destroy_obj
+ 951      00
+ 952              	.LVL86:
+ 240:src/mcu_msg_parser.c ****     }
+ 953              		.loc 1 240 0
+ 954 008a 488B0424 		movq	(%rsp), %rax
+ 955 008e 488B5424 		movq	8(%rsp), %rdx
+ 955      08
+ 956 0093 49894500 		movq	%rax, 0(%r13)
+ 957 0097 49895508 		movq	%rdx, 8(%r13)
+ 958 009b 488B4424 		movq	16(%rsp), %rax
+ 958      10
+ 959 00a0 49894510 		movq	%rax, 16(%r13)
+ 960 00a4 EB5C     		jmp	.L70
+ 961              	.LVL87:
+ 962              	.L75:
+ 247:src/mcu_msg_parser.c ****     }
+ 963              		.loc 1 247 0 discriminator 3
+ 964 00a6 4883C001 		addq	$1, %rax
+ 965              	.LVL88:
+ 966              	.L73:
+ 247:src/mcu_msg_parser.c ****     }
+ 967              		.loc 1 247 0 is_stmt 0 discriminator 1
+ 968 00aa 4889C1   		movq	%rax, %rcx
+ 969 00ad 4829E9   		subq	%rbp, %rcx
+ 970 00b0 418D56FF 		leal	-1(%r14), %edx
+ 971 00b4 4863D2   		movslq	%edx, %rdx
+ 972 00b7 4839D1   		cmpq	%rdx, %rcx
+ 973 00ba 7DB4     		jge	.L74
+ 247:src/mcu_msg_parser.c ****     }
+ 974              		.loc 1 247 0 discriminator 2
+ 975 00bc 803828   		cmpb	$40, (%rax)
+ 976 00bf 75E5     		jne	.L75
+ 977 00c1 EBAD     		jmp	.L74
+ 978              	.L78:
+ 252:src/mcu_msg_parser.c ****         p++;
+ 979              		.loc 1 252 0 is_stmt 1
+ 980 00c3 4883C001 		addq	$1, %rax
+ 981              	.LVL89:
+ 253:src/mcu_msg_parser.c ****         res.content_len++;
+ 982              		.loc 1 253 0
+ 983 00c7 0FB77424 		movzwl	18(%rsp), %esi
+ 983      12
+ 984 00cc 8D5601   		leal	1(%rsi), %edx
+ 985 00cf 66895424 		movw	%dx, 18(%rsp)
+ 985      12
+ 986              	.L76:
+ 251:src/mcu_msg_parser.c ****         p++;
+GAS LISTING /tmp/ccL93DFv.s 			page 25
 
 
- 275:src/mcu_msg_parser.c ****         if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
- 955              		.loc 1 275 0
- 956 014a 4883C601 		addq	$1, %rsi
- 957              	.LVL112:
- 958 014e EBB0     		jmp	.L83
- 959              	.LVL113:
- 960              	.L84:
- 282:src/mcu_msg_parser.c ****     }
- 283:src/mcu_msg_parser.c **** 
- 284:src/mcu_msg_parser.c ****     *res_val *= sign; //corrigate with the sign
- 961              		.loc 1 284 0
- 962 0150 660FEFC0 		pxor	%xmm0, %xmm0
- 963 0154 F3410F2A 		cvtsi2ss	%r8d, %xmm0
- 963      C0
- 964 0159 F30F5903 		mulss	(%rbx), %xmm0
- 965 015d F30F1103 		movss	%xmm0, (%rbx)
- 966              	.LVL114:
- 967              	.L70:
- 285:src/mcu_msg_parser.c **** 
- 286:src/mcu_msg_parser.c ****     return res; // return with the digit count + '.' separator, if correct
- 287:src/mcu_msg_parser.c **** }
- 968              		.loc 1 287 0
- 969 0161 5B       		popq	%rbx
- 970              	.LCFI51:
- 971              		.cfi_remember_state
- 972              		.cfi_def_cfa_offset 16
- 973              	.LVL115:
- 974 0162 5D       		popq	%rbp
- 975              	.LCFI52:
- 976              		.cfi_def_cfa_offset 8
- 977 0163 C3       		ret
- 978              	.LVL116:
- 979              	.L86:
- 980              	.LCFI53:
- 981              		.cfi_restore_state
- 233:src/mcu_msg_parser.c **** 
- 982              		.loc 1 233 0
- 983 0164 B8FFFFFF 		movl	$-1, %eax
- 983      FF
- 984              	.LVL117:
- 985 0169 EBF6     		jmp	.L70
- 986              	.LVL118:
- 987              	.L88:
- 254:src/mcu_msg_parser.c ****         }
- 988              		.loc 1 254 0
- 989 016b B8FFFFFF 		movl	$-1, %eax
- 989      FF
- 990 0170 EBEF     		jmp	.L70
- 991              	.LVL119:
- 992              	.L90:
- 277:src/mcu_msg_parser.c ****         }
- 993              		.loc 1 277 0
- 994 0172 B8FFFFFF 		movl	$-1, %eax
- 994      FF
- 995              	.LVL120:
- 996 0177 EBE8     		jmp	.L70
- 997              		.cfi_endproc
-GAS LISTING /tmp/ccvnMFoE.s 			page 26
+ 987              		.loc 1 251 0
+ 988 00d4 4889C1   		movq	%rax, %rcx
+ 989 00d7 4829E9   		subq	%rbp, %rcx
+ 990 00da 410FB7D4 		movzwl	%r12w, %edx
+ 991 00de 4839D1   		cmpq	%rdx, %rcx
+ 992 00e1 7D05     		jge	.L77
+ 251:src/mcu_msg_parser.c ****         p++;
+ 993              		.loc 1 251 0 is_stmt 0 discriminator 1
+ 994 00e3 803829   		cmpb	$41, (%rax)
+ 995 00e6 75DB     		jne	.L78
+ 996              	.L77:
+ 254:src/mcu_msg_parser.c ****     }
+ 255:src/mcu_msg_parser.c ****     return res;
+ 997              		.loc 1 255 0 is_stmt 1
+ 998 00e8 488B0424 		movq	(%rsp), %rax
+ 999              	.LVL90:
+ 1000 00ec 488B5424 		movq	8(%rsp), %rdx
+ 1000      08
+ 1001 00f1 49894500 		movq	%rax, 0(%r13)
+ 1002 00f5 49895508 		movq	%rdx, 8(%r13)
+ 1003 00f9 488B4424 		movq	16(%rsp), %rax
+ 1003      10
+ 1004 00fe 49894510 		movq	%rax, 16(%r13)
+ 1005              	.LVL91:
+ 1006              	.L70:
+ 256:src/mcu_msg_parser.c **** }
+ 1007              		.loc 1 256 0
+ 1008 0102 4C89E8   		movq	%r13, %rax
+ 1009 0105 488B5C24 		movq	24(%rsp), %rbx
+ 1009      18
+ 1010 010a 6448331C 		xorq	%fs:40, %rbx
+ 1010      25280000 
+ 1010      00
+ 1011 0113 750F     		jne	.L82
+ 1012              	.LVL92:
+ 1013 0115 4883C428 		addq	$40, %rsp
+ 1014              	.LCFI46:
+ 1015              		.cfi_remember_state
+ 1016              		.cfi_def_cfa_offset 56
+ 1017 0119 5B       		popq	%rbx
+ 1018              	.LCFI47:
+ 1019              		.cfi_def_cfa_offset 48
+ 1020 011a 5D       		popq	%rbp
+ 1021              	.LCFI48:
+ 1022              		.cfi_def_cfa_offset 40
+ 1023 011b 415C     		popq	%r12
+ 1024              	.LCFI49:
+ 1025              		.cfi_def_cfa_offset 32
+ 1026 011d 415D     		popq	%r13
+ 1027              	.LCFI50:
+ 1028              		.cfi_def_cfa_offset 24
+ 1029 011f 415E     		popq	%r14
+ 1030              	.LCFI51:
+ 1031              		.cfi_def_cfa_offset 16
+ 1032 0121 415F     		popq	%r15
+ 1033              	.LCFI52:
+ 1034              		.cfi_def_cfa_offset 8
+GAS LISTING /tmp/ccL93DFv.s 			page 26
 
 
- 998              	.LFE34:
- 1000              		.section	.text.mcu_msg_parser_get_string,"ax",@progbits
- 1001              		.globl	mcu_msg_parser_get_string
- 1003              	mcu_msg_parser_get_string:
- 1004              	.LFB35:
- 288:src/mcu_msg_parser.c **** 
- 289:src/mcu_msg_parser.c **** void mcu_msg_parser_get_string(char *dest, mcu_msg_obj_t obj, char *key)
- 290:src/mcu_msg_parser.c **** {
- 1005              		.loc 1 290 0
- 1006              		.cfi_startproc
- 1007              	.LVL121:
- 291:src/mcu_msg_parser.c ****     
- 292:src/mcu_msg_parser.c **** }
- 1008              		.loc 1 292 0
- 1009 0000 F3C3     		rep ret
- 1010              		.cfi_endproc
- 1011              	.LFE35:
- 1013              		.section	.rodata.cst4,"aM",@progbits,4
- 1014              		.align 4
- 1015              	.LC0:
- 1016 0000 CDCCCC3D 		.long	1036831949
- 1017              		.align 4
- 1018              	.LC2:
- 1019 0004 00002041 		.long	1092616192
- 1020              		.text
- 1021              	.Letext0:
- 1022              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h"
- 1023              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 1024              		.file 4 "/usr/include/x86_64-linux-gnu/bits/libio.h"
- 1025              		.file 5 "/usr/include/stdio.h"
- 1026              		.file 6 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
- 1027              		.file 7 "/usr/include/x86_64-linux-gnu/bits/stdint-intn.h"
- 1028              		.file 8 "/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h"
- 1029              		.file 9 "inc/mcu_msg_parser.h"
-GAS LISTING /tmp/ccvnMFoE.s 			page 27
+ 1035              	.LVL93:
+ 1036 0123 C3       		ret
+ 1037              	.LVL94:
+ 1038              	.L82:
+ 1039              	.LCFI53:
+ 1040              		.cfi_restore_state
+ 1041 0124 E8000000 		call	__stack_chk_fail@PLT
+ 1041      00
+ 1042              	.LVL95:
+ 1043              		.cfi_endproc
+ 1044              	.LFE38:
+ 1046              		.section	.text.mcu_msg_parser_get_int,"ax",@progbits
+ 1047              		.globl	mcu_msg_parser_get_int
+ 1049              	mcu_msg_parser_get_int:
+ 1050              	.LFB39:
+ 257:src/mcu_msg_parser.c **** 
+ 258:src/mcu_msg_parser.c **** int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
+ 259:src/mcu_msg_parser.c **** {
+ 1051              		.loc 1 259 0
+ 1052              		.cfi_startproc
+ 1053              	.LVL96:
+ 1054 0000 4156     		pushq	%r14
+ 1055              	.LCFI54:
+ 1056              		.cfi_def_cfa_offset 16
+ 1057              		.cfi_offset 14, -16
+ 1058 0002 4155     		pushq	%r13
+ 1059              	.LCFI55:
+ 1060              		.cfi_def_cfa_offset 24
+ 1061              		.cfi_offset 13, -24
+ 1062 0004 4154     		pushq	%r12
+ 1063              	.LCFI56:
+ 1064              		.cfi_def_cfa_offset 32
+ 1065              		.cfi_offset 12, -32
+ 1066 0006 55       		pushq	%rbp
+ 1067              	.LCFI57:
+ 1068              		.cfi_def_cfa_offset 40
+ 1069              		.cfi_offset 6, -40
+ 1070 0007 53       		pushq	%rbx
+ 1071              	.LCFI58:
+ 1072              		.cfi_def_cfa_offset 48
+ 1073              		.cfi_offset 3, -48
+ 1074 0008 4989FD   		movq	%rdi, %r13
+ 260:src/mcu_msg_parser.c ****     char *p = find_val(obj, key);
+ 1075              		.loc 1 260 0
+ 1076 000b FF742440 		pushq	64(%rsp)
+ 1077              	.LCFI59:
+ 1078              		.cfi_def_cfa_offset 56
+ 1079 000f FF742440 		pushq	64(%rsp)
+ 1080              	.LCFI60:
+ 1081              		.cfi_def_cfa_offset 64
+ 1082 0013 FF742440 		pushq	64(%rsp)
+ 1083              	.LCFI61:
+ 1084              		.cfi_def_cfa_offset 72
+ 1085 0017 4889F7   		movq	%rsi, %rdi
+ 1086              	.LVL97:
+ 1087 001a E8000000 		call	find_val
+ 1087      00
+GAS LISTING /tmp/ccL93DFv.s 			page 27
+
+
+ 1088              	.LVL98:
+ 1089 001f 4883C418 		addq	$24, %rsp
+ 1090              	.LCFI62:
+ 1091              		.cfi_def_cfa_offset 48
+ 1092              	.LVL99:
+ 261:src/mcu_msg_parser.c ****     mcu_msg_size_t i;
+ 262:src/mcu_msg_parser.c ****     unsigned m = 1;
+ 263:src/mcu_msg_parser.c ****     int sign = 1;
+ 264:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
+ 265:src/mcu_msg_parser.c **** 
+ 266:src/mcu_msg_parser.c ****     if(p == NULL)  //key nout found
+ 1093              		.loc 1 266 0
+ 1094 0023 4885C0   		testq	%rax, %rax
+ 1095 0026 0F84BF00 		je	.L93
+ 1095      0000
+ 1096 002c 4889C3   		movq	%rax, %rbx
+ 267:src/mcu_msg_parser.c ****         return -1;
+ 268:src/mcu_msg_parser.c **** 
+ 269:src/mcu_msg_parser.c **** 
+ 270:src/mcu_msg_parser.c ****     switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
+ 1097              		.loc 1 270 0
+ 1098 002f 0FB600   		movzbl	(%rax), %eax
+ 1099              	.LVL100:
+ 1100 0032 3C2B     		cmpb	$43, %al
+ 1101 0034 740C     		je	.L86
+ 1102 0036 3C2D     		cmpb	$45, %al
+ 1103 0038 7453     		je	.L87
+ 263:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
+ 1104              		.loc 1 263 0
+ 1105 003a 41BE0100 		movl	$1, %r14d
+ 1105      0000
+ 1106 0040 EB0A     		jmp	.L85
+ 1107              	.L86:
+ 271:src/mcu_msg_parser.c ****         case '+':
+ 272:src/mcu_msg_parser.c ****             sign = 1;
+ 273:src/mcu_msg_parser.c ****             p++;
+ 1108              		.loc 1 273 0
+ 1109 0042 4883C301 		addq	$1, %rbx
+ 1110              	.LVL101:
+ 272:src/mcu_msg_parser.c ****             p++;
+ 1111              		.loc 1 272 0
+ 1112 0046 41BE0100 		movl	$1, %r14d
+ 1112      0000
+ 1113              	.LVL102:
+ 1114              	.L85:
+ 274:src/mcu_msg_parser.c ****         break;
+ 275:src/mcu_msg_parser.c ****         
+ 276:src/mcu_msg_parser.c ****         case '-':
+ 277:src/mcu_msg_parser.c ****             sign = -1;
+ 278:src/mcu_msg_parser.c ****             p++;
+ 279:src/mcu_msg_parser.c ****         break;
+ 280:src/mcu_msg_parser.c ****         
+ 281:src/mcu_msg_parser.c ****         default:
+ 282:src/mcu_msg_parser.c ****         break;
+ 283:src/mcu_msg_parser.c ****     }
+ 284:src/mcu_msg_parser.c **** 
+ 285:src/mcu_msg_parser.c ****     for(i = 0; (p - obj.content) < obj.content_len && !is_whitespace(*p) && *p != CTRL_KEY_SEP; i++
+GAS LISTING /tmp/ccL93DFv.s 			page 28
+
+
+ 1115              		.loc 1 285 0
+ 1116 004c 41BC0000 		movl	$0, %r12d
+ 1116      0000
+ 1117              	.LVL103:
+ 1118              	.L88:
+ 1119              		.loc 1 285 0 is_stmt 0 discriminator 1
+ 1120 0052 4889DA   		movq	%rbx, %rdx
+ 1121 0055 482B5424 		subq	56(%rsp), %rdx
+ 1121      38
+ 1122 005a 0FB74424 		movzwl	66(%rsp), %eax
+ 1122      42
+ 1123 005f 4839C2   		cmpq	%rax, %rdx
+ 1124 0062 7D35     		jge	.L89
+ 1125              		.loc 1 285 0 discriminator 3
+ 1126 0064 0FB62B   		movzbl	(%rbx), %ebp
+ 1127 0067 400FBEFD 		movsbl	%bpl, %edi
+ 1128 006b E8000000 		call	is_whitespace
+ 1128      00
+ 1129              	.LVL104:
+ 1130 0070 84C0     		testb	%al, %al
+ 1131 0072 7525     		jne	.L89
+ 1132              		.loc 1 285 0 discriminator 4
+ 1133 0074 4080FD3B 		cmpb	$59, %bpl
+ 1134 0078 741F     		je	.L89
+ 286:src/mcu_msg_parser.c ****         if(*p < '0' || *p > '9') {    // if non valid number, return with error
+ 1135              		.loc 1 286 0 is_stmt 1
+ 1136 007a 83ED30   		subl	$48, %ebp
+ 1137 007d 4080FD09 		cmpb	$9, %bpl
+ 1138 0081 776F     		ja	.L95
+ 285:src/mcu_msg_parser.c ****         if(*p < '0' || *p > '9') {    // if non valid number, return with error
+ 1139              		.loc 1 285 0 discriminator 2
+ 1140 0083 4183C401 		addl	$1, %r12d
+ 1141              	.LVL105:
+ 1142 0087 4883C301 		addq	$1, %rbx
+ 1143              	.LVL106:
+ 1144 008b EBC5     		jmp	.L88
+ 1145              	.LVL107:
+ 1146              	.L87:
+ 278:src/mcu_msg_parser.c ****         break;
+ 1147              		.loc 1 278 0
+ 1148 008d 4883C301 		addq	$1, %rbx
+ 1149              	.LVL108:
+ 277:src/mcu_msg_parser.c ****             p++;
+ 1150              		.loc 1 277 0
+ 1151 0091 41BEFFFF 		movl	$-1, %r14d
+ 1151      FFFF
+ 279:src/mcu_msg_parser.c ****         
+ 1152              		.loc 1 279 0
+ 1153 0097 EBB3     		jmp	.L85
+ 1154              	.LVL109:
+ 1155              	.L89:
+ 287:src/mcu_msg_parser.c ****             return -1;
+ 288:src/mcu_msg_parser.c ****         }
+ 289:src/mcu_msg_parser.c ****     }
+ 290:src/mcu_msg_parser.c **** 
+ 291:src/mcu_msg_parser.c ****     *res_val = 0;
+ 1156              		.loc 1 291 0
+GAS LISTING /tmp/ccL93DFv.s 			page 29
+
+
+ 1157 0099 41C74500 		movl	$0, 0(%r13)
+ 1157      00000000 
+ 292:src/mcu_msg_parser.c ****     --p;
+ 1158              		.loc 1 292 0
+ 1159 00a1 4883EB01 		subq	$1, %rbx
+ 1160              	.LVL110:
+ 264:src/mcu_msg_parser.c **** 
+ 1161              		.loc 1 264 0
+ 1162 00a5 B8000000 		movl	$0, %eax
+ 1162      00
+ 262:src/mcu_msg_parser.c ****     int sign = 1;
+ 1163              		.loc 1 262 0
+ 1164 00aa BA010000 		movl	$1, %edx
+ 1164      00
+ 293:src/mcu_msg_parser.c ****     while(i--) {
+ 1165              		.loc 1 293 0
+ 1166 00af EB1D     		jmp	.L91
+ 1167              	.LVL111:
+ 1168              	.L92:
+ 294:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
+ 1169              		.loc 1 294 0
+ 1170 00b1 0FBE0B   		movsbl	(%rbx), %ecx
+ 1171 00b4 83E930   		subl	$48, %ecx
+ 1172 00b7 0FAFCA   		imull	%edx, %ecx
+ 1173 00ba 41014D00 		addl	%ecx, 0(%r13)
+ 295:src/mcu_msg_parser.c ****         m *= 10;
+ 1174              		.loc 1 295 0
+ 1175 00be 8D0C92   		leal	(%rdx,%rdx,4), %ecx
+ 1176 00c1 8D1409   		leal	(%rcx,%rcx), %edx
+ 1177              	.LVL112:
+ 296:src/mcu_msg_parser.c ****         res++;
+ 1178              		.loc 1 296 0
+ 1179 00c4 83C001   		addl	$1, %eax
+ 1180              	.LVL113:
+ 293:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
+ 1181              		.loc 1 293 0
+ 1182 00c7 4189F4   		movl	%esi, %r12d
+ 294:src/mcu_msg_parser.c ****         m *= 10;
+ 1183              		.loc 1 294 0
+ 1184 00ca 488D5BFF 		leaq	-1(%rbx), %rbx
+ 1185              	.LVL114:
+ 1186              	.L91:
+ 293:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
+ 1187              		.loc 1 293 0
+ 1188 00ce 418D7424 		leal	-1(%r12), %esi
+ 1188      FF
+ 1189              	.LVL115:
+ 1190 00d3 664585E4 		testw	%r12w, %r12w
+ 1191 00d7 75D8     		jne	.L92
+ 297:src/mcu_msg_parser.c ****     }
+ 298:src/mcu_msg_parser.c ****     
+ 299:src/mcu_msg_parser.c ****     *res_val *= sign; //corrigate with the sign
+ 1192              		.loc 1 299 0
+ 1193 00d9 450FAF75 		imull	0(%r13), %r14d
+ 1193      00
+ 1194              	.LVL116:
+ 1195 00de 45897500 		movl	%r14d, 0(%r13)
+GAS LISTING /tmp/ccL93DFv.s 			page 30
+
+
+ 1196              	.LVL117:
+ 1197              	.L83:
+ 300:src/mcu_msg_parser.c **** 
+ 301:src/mcu_msg_parser.c ****     return res; // return with the digit count, if correct
+ 302:src/mcu_msg_parser.c **** }
+ 1198              		.loc 1 302 0
+ 1199 00e2 5B       		popq	%rbx
+ 1200              	.LCFI63:
+ 1201              		.cfi_remember_state
+ 1202              		.cfi_def_cfa_offset 40
+ 1203 00e3 5D       		popq	%rbp
+ 1204              	.LCFI64:
+ 1205              		.cfi_def_cfa_offset 32
+ 1206 00e4 415C     		popq	%r12
+ 1207              	.LCFI65:
+ 1208              		.cfi_def_cfa_offset 24
+ 1209 00e6 415D     		popq	%r13
+ 1210              	.LCFI66:
+ 1211              		.cfi_def_cfa_offset 16
+ 1212              	.LVL118:
+ 1213 00e8 415E     		popq	%r14
+ 1214              	.LCFI67:
+ 1215              		.cfi_def_cfa_offset 8
+ 1216 00ea C3       		ret
+ 1217              	.LVL119:
+ 1218              	.L93:
+ 1219              	.LCFI68:
+ 1220              		.cfi_restore_state
+ 267:src/mcu_msg_parser.c **** 
+ 1221              		.loc 1 267 0
+ 1222 00eb B8FFFFFF 		movl	$-1, %eax
+ 1222      FF
+ 1223              	.LVL120:
+ 1224 00f0 EBF0     		jmp	.L83
+ 1225              	.LVL121:
+ 1226              	.L95:
+ 287:src/mcu_msg_parser.c ****         }
+ 1227              		.loc 1 287 0
+ 1228 00f2 B8FFFFFF 		movl	$-1, %eax
+ 1228      FF
+ 1229 00f7 EBE9     		jmp	.L83
+ 1230              		.cfi_endproc
+ 1231              	.LFE39:
+ 1233              		.section	.text.mcu_msg_parser_get_float,"ax",@progbits
+ 1234              		.globl	mcu_msg_parser_get_float
+ 1236              	mcu_msg_parser_get_float:
+ 1237              	.LFB40:
+ 303:src/mcu_msg_parser.c **** 
+ 304:src/mcu_msg_parser.c **** 
+ 305:src/mcu_msg_parser.c **** int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
+ 306:src/mcu_msg_parser.c **** {
+ 1238              		.loc 1 306 0
+ 1239              		.cfi_startproc
+ 1240              	.LVL122:
+ 1241 0000 4157     		pushq	%r15
+ 1242              	.LCFI69:
+ 1243              		.cfi_def_cfa_offset 16
+GAS LISTING /tmp/ccL93DFv.s 			page 31
+
+
+ 1244              		.cfi_offset 15, -16
+ 1245 0002 4156     		pushq	%r14
+ 1246              	.LCFI70:
+ 1247              		.cfi_def_cfa_offset 24
+ 1248              		.cfi_offset 14, -24
+ 1249 0004 4155     		pushq	%r13
+ 1250              	.LCFI71:
+ 1251              		.cfi_def_cfa_offset 32
+ 1252              		.cfi_offset 13, -32
+ 1253 0006 4154     		pushq	%r12
+ 1254              	.LCFI72:
+ 1255              		.cfi_def_cfa_offset 40
+ 1256              		.cfi_offset 12, -40
+ 1257 0008 55       		pushq	%rbp
+ 1258              	.LCFI73:
+ 1259              		.cfi_def_cfa_offset 48
+ 1260              		.cfi_offset 6, -48
+ 1261 0009 53       		pushq	%rbx
+ 1262              	.LCFI74:
+ 1263              		.cfi_def_cfa_offset 56
+ 1264              		.cfi_offset 3, -56
+ 1265 000a 4883EC10 		subq	$16, %rsp
+ 1266              	.LCFI75:
+ 1267              		.cfi_def_cfa_offset 72
+ 1268 000e 4989FD   		movq	%rdi, %r13
+ 307:src/mcu_msg_parser.c ****     char *p = find_val(obj, key);
+ 1269              		.loc 1 307 0
+ 1270 0011 FF742458 		pushq	88(%rsp)
+ 1271              	.LCFI76:
+ 1272              		.cfi_def_cfa_offset 80
+ 1273 0015 FF742458 		pushq	88(%rsp)
+ 1274              	.LCFI77:
+ 1275              		.cfi_def_cfa_offset 88
+ 1276 0019 FF742458 		pushq	88(%rsp)
+ 1277              	.LCFI78:
+ 1278              		.cfi_def_cfa_offset 96
+ 1279 001d 4889F7   		movq	%rsi, %rdi
+ 1280              	.LVL123:
+ 1281 0020 E8000000 		call	find_val
+ 1281      00
+ 1282              	.LVL124:
+ 1283 0025 4883C418 		addq	$24, %rsp
+ 1284              	.LCFI79:
+ 1285              		.cfi_def_cfa_offset 72
+ 1286              	.LVL125:
+ 308:src/mcu_msg_parser.c ****     char *pf;
+ 309:src/mcu_msg_parser.c ****     mcu_msg_size_t i;
+ 310:src/mcu_msg_parser.c ****     unsigned m = 1;
+ 311:src/mcu_msg_parser.c ****     float mf = 0.1;
+ 312:src/mcu_msg_parser.c ****     int sign = 1;
+ 313:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
+ 314:src/mcu_msg_parser.c **** 
+ 315:src/mcu_msg_parser.c ****     if(p == NULL)  //key nout found
+ 1287              		.loc 1 315 0
+ 1288 0029 4885C0   		testq	%rax, %rax
+ 1289 002c 0F848801 		je	.L114
+ 1289      0000
+GAS LISTING /tmp/ccL93DFv.s 			page 32
+
+
+ 1290 0032 4889C3   		movq	%rax, %rbx
+ 316:src/mcu_msg_parser.c ****         return -1;
+ 317:src/mcu_msg_parser.c **** 
+ 318:src/mcu_msg_parser.c **** 
+ 319:src/mcu_msg_parser.c ****     switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
+ 1291              		.loc 1 319 0
+ 1292 0035 0FB600   		movzbl	(%rax), %eax
+ 1293              	.LVL126:
+ 1294 0038 3C2B     		cmpb	$43, %al
+ 1295 003a 740E     		je	.L101
+ 1296 003c 3C2D     		cmpb	$45, %al
+ 1297 003e 7465     		je	.L102
+ 312:src/mcu_msg_parser.c ****     int8_t res = 0; // result of function
+ 1298              		.loc 1 312 0
+ 1299 0040 C744240C 		movl	$1, 12(%rsp)
+ 1299      01000000 
+ 1300 0048 EB0C     		jmp	.L100
+ 1301              	.L101:
+ 320:src/mcu_msg_parser.c ****         case '+':
+ 321:src/mcu_msg_parser.c ****             sign = 1;
+ 322:src/mcu_msg_parser.c ****             p++;
+ 1302              		.loc 1 322 0
+ 1303 004a 4883C301 		addq	$1, %rbx
+ 1304              	.LVL127:
+ 321:src/mcu_msg_parser.c ****             p++;
+ 1305              		.loc 1 321 0
+ 1306 004e C744240C 		movl	$1, 12(%rsp)
+ 1306      01000000 
+ 1307              	.LVL128:
+ 1308              	.L100:
+ 323:src/mcu_msg_parser.c ****         break;
+ 324:src/mcu_msg_parser.c ****         
+ 325:src/mcu_msg_parser.c ****         case '-':
+ 326:src/mcu_msg_parser.c ****             sign = -1;
+ 327:src/mcu_msg_parser.c ****             p++;
+ 328:src/mcu_msg_parser.c ****         break;
+ 329:src/mcu_msg_parser.c ****         
+ 330:src/mcu_msg_parser.c ****         default:
+ 331:src/mcu_msg_parser.c ****         break;
+ 332:src/mcu_msg_parser.c ****     }
+ 333:src/mcu_msg_parser.c **** 
+ 334:src/mcu_msg_parser.c ****     //move p to dec separator or end of the value
+ 335:src/mcu_msg_parser.c ****     for(i = 0; (p - obj.content) < obj.content_len && !is_whitespace(*p) && *p != CTRL_KEY_SEP && *
+ 1309              		.loc 1 335 0
+ 1310 0056 BD000000 		movl	$0, %ebp
+ 1310      00
+ 1311              	.LVL129:
+ 1312              	.L103:
+ 1313              		.loc 1 335 0 is_stmt 0 discriminator 1
+ 1314 005b 4C8B7424 		movq	80(%rsp), %r14
+ 1314      50
+ 1315 0060 4889D8   		movq	%rbx, %rax
+ 1316 0063 4C29F0   		subq	%r14, %rax
+ 1317 0066 440FB77C 		movzwl	90(%rsp), %r15d
+ 1317      245A
+ 1318 006c 4C39F8   		cmpq	%r15, %rax
+ 1319 006f 7D42     		jge	.L104
+GAS LISTING /tmp/ccL93DFv.s 			page 33
+
+
+ 1320              		.loc 1 335 0 discriminator 3
+ 1321 0071 440FB623 		movzbl	(%rbx), %r12d
+ 1322 0075 410FBEFC 		movsbl	%r12b, %edi
+ 1323 0079 E8000000 		call	is_whitespace
+ 1323      00
+ 1324              	.LVL130:
+ 1325 007e 84C0     		testb	%al, %al
+ 1326 0080 7531     		jne	.L104
+ 1327              		.loc 1 335 0 discriminator 4
+ 1328 0082 4180FC3B 		cmpb	$59, %r12b
+ 1329 0086 742B     		je	.L104
+ 1330              		.loc 1 335 0 discriminator 5
+ 1331 0088 4180FC2E 		cmpb	$46, %r12b
+ 1332 008c 7425     		je	.L104
+ 336:src/mcu_msg_parser.c ****         if((*p < '0' || *p > '9')) {    // if non valid number, return with error
+ 1333              		.loc 1 336 0 is_stmt 1
+ 1334 008e 4183EC30 		subl	$48, %r12d
+ 1335 0092 4180FC09 		cmpb	$9, %r12b
+ 1336 0096 0F872501 		ja	.L116
+ 1336      0000
+ 335:src/mcu_msg_parser.c ****         if((*p < '0' || *p > '9')) {    // if non valid number, return with error
+ 1337              		.loc 1 335 0 discriminator 2
+ 1338 009c 83C501   		addl	$1, %ebp
+ 1339              	.LVL131:
+ 1340 009f 4883C301 		addq	$1, %rbx
+ 1341              	.LVL132:
+ 1342 00a3 EBB6     		jmp	.L103
+ 1343              	.LVL133:
+ 1344              	.L102:
+ 327:src/mcu_msg_parser.c ****         break;
+ 1345              		.loc 1 327 0
+ 1346 00a5 4883C301 		addq	$1, %rbx
+ 1347              	.LVL134:
+ 326:src/mcu_msg_parser.c ****             p++;
+ 1348              		.loc 1 326 0
+ 1349 00a9 C744240C 		movl	$-1, 12(%rsp)
+ 1349      FFFFFFFF 
+ 328:src/mcu_msg_parser.c ****         
+ 1350              		.loc 1 328 0
+ 1351 00b1 EBA3     		jmp	.L100
+ 1352              	.LVL135:
+ 1353              	.L104:
+ 337:src/mcu_msg_parser.c ****             return -1;
+ 338:src/mcu_msg_parser.c ****         }
+ 339:src/mcu_msg_parser.c ****     }
+ 340:src/mcu_msg_parser.c **** 
+ 341:src/mcu_msg_parser.c ****     *res_val = 0.0;
+ 1354              		.loc 1 341 0
+ 1355 00b3 41C74500 		movl	$0x00000000, 0(%r13)
+ 1355      00000000 
+ 342:src/mcu_msg_parser.c ****     
+ 343:src/mcu_msg_parser.c ****     if(*p == '.') {
+ 1356              		.loc 1 343 0
+ 1357 00bb 803B2E   		cmpb	$46, (%rbx)
+ 1358 00be 7416     		je	.L121
+ 313:src/mcu_msg_parser.c **** 
+ 1359              		.loc 1 313 0
+GAS LISTING /tmp/ccL93DFv.s 			page 34
+
+
+ 1360 00c0 C6442407 		movb	$0, 7(%rsp)
+ 1360      00
+ 344:src/mcu_msg_parser.c ****         pf = p + 1;
+ 345:src/mcu_msg_parser.c ****         res++;
+ 346:src/mcu_msg_parser.c ****     } else {
+ 347:src/mcu_msg_parser.c ****         pf = NULL;
+ 1361              		.loc 1 347 0
+ 1362 00c5 41BC0000 		movl	$0, %r12d
+ 1362      0000
+ 1363              	.LVL136:
+ 1364              	.L106:
+ 348:src/mcu_msg_parser.c ****     }
+ 349:src/mcu_msg_parser.c **** 
+ 350:src/mcu_msg_parser.c ****     --p;
+ 1365              		.loc 1 350 0
+ 1366 00cb 4883EB01 		subq	$1, %rbx
+ 1367              	.LVL137:
+ 310:src/mcu_msg_parser.c ****     float mf = 0.1;
+ 1368              		.loc 1 310 0
+ 1369 00cf BA010000 		movl	$1, %edx
+ 1369      00
+ 351:src/mcu_msg_parser.c ****     while(i--) {
+ 1370              		.loc 1 351 0
+ 1371 00d4 EB3A     		jmp	.L107
+ 1372              	.LVL138:
+ 1373              	.L121:
+ 344:src/mcu_msg_parser.c ****         res++;
+ 1374              		.loc 1 344 0
+ 1375 00d6 4C8D6301 		leaq	1(%rbx), %r12
+ 1376              	.LVL139:
+ 345:src/mcu_msg_parser.c ****     } else {
+ 1377              		.loc 1 345 0
+ 1378 00da C6442407 		movb	$1, 7(%rsp)
+ 1378      01
+ 1379 00df EBEA     		jmp	.L106
+ 1380              	.LVL140:
+ 1381              	.L110:
+ 352:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
+ 1382              		.loc 1 352 0
+ 1383 00e1 0FBE03   		movsbl	(%rbx), %eax
+ 1384 00e4 83E830   		subl	$48, %eax
+ 1385 00e7 0FAFC2   		imull	%edx, %eax
+ 1386 00ea 660FEFC0 		pxor	%xmm0, %xmm0
+ 1387 00ee F3480F2A 		cvtsi2ssq	%rax, %xmm0
+ 1387      C0
+ 1388 00f3 F3410F58 		addss	0(%r13), %xmm0
+ 1388      4500
+ 1389 00f9 F3410F11 		movss	%xmm0, 0(%r13)
+ 1389      4500
+ 353:src/mcu_msg_parser.c ****         m *= 10;
+ 1390              		.loc 1 353 0
+ 1391 00ff 8D0492   		leal	(%rdx,%rdx,4), %eax
+ 1392 0102 8D1400   		leal	(%rax,%rax), %edx
+ 1393              	.LVL141:
+ 354:src/mcu_msg_parser.c ****         res++;
+ 1394              		.loc 1 354 0
+ 1395 0105 80442407 		addb	$1, 7(%rsp)
+GAS LISTING /tmp/ccL93DFv.s 			page 35
+
+
+ 1395      01
+ 1396              	.LVL142:
+ 351:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
+ 1397              		.loc 1 351 0
+ 1398 010a 89CD     		movl	%ecx, %ebp
+ 352:src/mcu_msg_parser.c ****         m *= 10;
+ 1399              		.loc 1 352 0
+ 1400 010c 488D5BFF 		leaq	-1(%rbx), %rbx
+ 1401              	.LVL143:
+ 1402              	.L107:
+ 351:src/mcu_msg_parser.c ****         *res_val += (*p-- - '0') * m;
+ 1403              		.loc 1 351 0
+ 1404 0110 8D4DFF   		leal	-1(%rbp), %ecx
+ 1405              	.LVL144:
+ 1406 0113 6685ED   		testw	%bp, %bp
+ 1407 0116 75C9     		jne	.L110
+ 311:src/mcu_msg_parser.c ****     int sign = 1;
+ 1408              		.loc 1 311 0
+ 1409 0118 F30F1015 		movss	.LC0(%rip), %xmm2
+ 1409      00000000 
+ 1410 0120 F30F1154 		movss	%xmm2, 8(%rsp)
+ 1410      2408
+ 1411              	.LVL145:
+ 1412              	.L111:
+ 355:src/mcu_msg_parser.c ****     }
+ 356:src/mcu_msg_parser.c ****     
+ 357:src/mcu_msg_parser.c ****     // calculate floating point section after '.' (if there is)
+ 358:src/mcu_msg_parser.c ****     for(; pf != NULL && (pf - obj.content) < obj.content_len && !is_whitespace(*pf) && *pf != CTRL_
+ 1413              		.loc 1 358 0 discriminator 1
+ 1414 0126 4D85E4   		testq	%r12, %r12
+ 1415 0129 7465     		je	.L112
+ 1416              		.loc 1 358 0 is_stmt 0 discriminator 2
+ 1417 012b 4C89E0   		movq	%r12, %rax
+ 1418 012e 4C29F0   		subq	%r14, %rax
+ 1419 0131 4939C7   		cmpq	%rax, %r15
+ 1420 0134 7E5A     		jle	.L112
+ 1421              		.loc 1 358 0 discriminator 3
+ 1422 0136 410FB61C 		movzbl	(%r12), %ebx
+ 1422      24
+ 1423 013b 0FBEEB   		movsbl	%bl, %ebp
+ 1424 013e 89EF     		movl	%ebp, %edi
+ 1425 0140 E8000000 		call	is_whitespace
+ 1425      00
+ 1426              	.LVL146:
+ 1427 0145 84C0     		testb	%al, %al
+ 1428 0147 7547     		jne	.L112
+ 1429              		.loc 1 358 0 discriminator 4
+ 1430 0149 80FB3B   		cmpb	$59, %bl
+ 1431 014c 7442     		je	.L112
+ 359:src/mcu_msg_parser.c ****         if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
+ 1432              		.loc 1 359 0 is_stmt 1
+ 1433 014e 83EB30   		subl	$48, %ebx
+ 1434 0151 80FB09   		cmpb	$9, %bl
+ 1435 0154 7772     		ja	.L118
+ 360:src/mcu_msg_parser.c ****             return -1;
+ 361:src/mcu_msg_parser.c ****         }
+ 362:src/mcu_msg_parser.c ****         *res_val += (*pf - '0') * mf;
+GAS LISTING /tmp/ccL93DFv.s 			page 36
+
+
+ 1436              		.loc 1 362 0
+ 1437 0156 83ED30   		subl	$48, %ebp
+ 1438 0159 660FEFC0 		pxor	%xmm0, %xmm0
+ 1439 015d F30F2AC5 		cvtsi2ss	%ebp, %xmm0
+ 1440 0161 F30F104C 		movss	8(%rsp), %xmm1
+ 1440      2408
+ 1441 0167 F30F59C1 		mulss	%xmm1, %xmm0
+ 1442 016b F3410F58 		addss	0(%r13), %xmm0
+ 1442      4500
+ 1443 0171 F3410F11 		movss	%xmm0, 0(%r13)
+ 1443      4500
+ 363:src/mcu_msg_parser.c ****         mf /= 10;
+ 1444              		.loc 1 363 0
+ 1445 0177 F30F5E0D 		divss	.LC2(%rip), %xmm1
+ 1445      00000000 
+ 1446 017f F30F114C 		movss	%xmm1, 8(%rsp)
+ 1446      2408
+ 1447              	.LVL147:
+ 364:src/mcu_msg_parser.c ****         res++; 
+ 1448              		.loc 1 364 0
+ 1449 0185 80442407 		addb	$1, 7(%rsp)
+ 1449      01
+ 1450              	.LVL148:
+ 358:src/mcu_msg_parser.c ****         if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
+ 1451              		.loc 1 358 0
+ 1452 018a 4983C401 		addq	$1, %r12
+ 1453              	.LVL149:
+ 1454 018e EB96     		jmp	.L111
+ 1455              	.LVL150:
+ 1456              	.L112:
+ 365:src/mcu_msg_parser.c ****     }
+ 366:src/mcu_msg_parser.c **** 
+ 367:src/mcu_msg_parser.c ****     *res_val *= sign; //corrigate with the sign
+ 1457              		.loc 1 367 0
+ 1458 0190 660FEFC0 		pxor	%xmm0, %xmm0
+ 1459 0194 F30F2A44 		cvtsi2ss	12(%rsp), %xmm0
+ 1459      240C
+ 1460 019a F3410F59 		mulss	0(%r13), %xmm0
+ 1460      4500
+ 1461 01a0 F3410F11 		movss	%xmm0, 0(%r13)
+ 1461      4500
+ 1462              	.LVL151:
+ 1463              	.L98:
+ 368:src/mcu_msg_parser.c **** 
+ 369:src/mcu_msg_parser.c ****     return res; // return with the digit count + '.' separator, if correct
+ 370:src/mcu_msg_parser.c **** }
+ 1464              		.loc 1 370 0
+ 1465 01a6 0FB64424 		movzbl	7(%rsp), %eax
+ 1465      07
+ 1466 01ab 4883C410 		addq	$16, %rsp
+ 1467              	.LCFI80:
+ 1468              		.cfi_remember_state
+ 1469              		.cfi_def_cfa_offset 56
+ 1470 01af 5B       		popq	%rbx
+ 1471              	.LCFI81:
+ 1472              		.cfi_def_cfa_offset 48
+ 1473 01b0 5D       		popq	%rbp
+GAS LISTING /tmp/ccL93DFv.s 			page 37
+
+
+ 1474              	.LCFI82:
+ 1475              		.cfi_def_cfa_offset 40
+ 1476 01b1 415C     		popq	%r12
+ 1477              	.LCFI83:
+ 1478              		.cfi_def_cfa_offset 32
+ 1479 01b3 415D     		popq	%r13
+ 1480              	.LCFI84:
+ 1481              		.cfi_def_cfa_offset 24
+ 1482              	.LVL152:
+ 1483 01b5 415E     		popq	%r14
+ 1484              	.LCFI85:
+ 1485              		.cfi_def_cfa_offset 16
+ 1486 01b7 415F     		popq	%r15
+ 1487              	.LCFI86:
+ 1488              		.cfi_def_cfa_offset 8
+ 1489 01b9 C3       		ret
+ 1490              	.LVL153:
+ 1491              	.L114:
+ 1492              	.LCFI87:
+ 1493              		.cfi_restore_state
+ 316:src/mcu_msg_parser.c **** 
+ 1494              		.loc 1 316 0
+ 1495 01ba C6442407 		movb	$-1, 7(%rsp)
+ 1495      FF
+ 1496 01bf EBE5     		jmp	.L98
+ 1497              	.LVL154:
+ 1498              	.L116:
+ 337:src/mcu_msg_parser.c ****         }
+ 1499              		.loc 1 337 0
+ 1500 01c1 C6442407 		movb	$-1, 7(%rsp)
+ 1500      FF
+ 1501 01c6 EBDE     		jmp	.L98
+ 1502              	.LVL155:
+ 1503              	.L118:
+ 360:src/mcu_msg_parser.c ****         }
+ 1504              		.loc 1 360 0
+ 1505 01c8 C6442407 		movb	$-1, 7(%rsp)
+ 1505      FF
+ 1506              	.LVL156:
+ 1507 01cd EBD7     		jmp	.L98
+ 1508              		.cfi_endproc
+ 1509              	.LFE40:
+ 1511              		.section	.text.mcu_msg_parser_get_string,"ax",@progbits
+ 1512              		.globl	mcu_msg_parser_get_string
+ 1514              	mcu_msg_parser_get_string:
+ 1515              	.LFB41:
+ 371:src/mcu_msg_parser.c **** 
+ 372:src/mcu_msg_parser.c **** 
+ 373:src/mcu_msg_parser.c **** 
+ 374:src/mcu_msg_parser.c **** mcu_msg_string_t mcu_msg_parser_get_string(mcu_msg_obj_t obj, char *key)
+ 375:src/mcu_msg_parser.c **** {
+ 1516              		.loc 1 375 0
+ 1517              		.cfi_startproc
+ 1518              	.LVL157:
+ 1519 0000 4883EC28 		subq	$40, %rsp
+ 1520              	.LCFI88:
+ 1521              		.cfi_def_cfa_offset 48
+GAS LISTING /tmp/ccL93DFv.s 			page 38
+
+
+ 1522              		.loc 1 375 0
+ 1523 0004 64488B04 		movq	%fs:40, %rax
+ 1523      25280000 
+ 1523      00
+ 1524 000d 48894424 		movq	%rax, 24(%rsp)
+ 1524      18
+ 1525 0012 31C0     		xorl	%eax, %eax
+ 376:src/mcu_msg_parser.c ****     char *p = find_val(obj, key);
+ 1526              		.loc 1 376 0
+ 1527 0014 FF742440 		pushq	64(%rsp)
+ 1528              	.LCFI89:
+ 1529              		.cfi_def_cfa_offset 56
+ 1530 0018 FF742440 		pushq	64(%rsp)
+ 1531              	.LCFI90:
+ 1532              		.cfi_def_cfa_offset 64
+ 1533 001c FF742440 		pushq	64(%rsp)
+ 1534              	.LCFI91:
+ 1535              		.cfi_def_cfa_offset 72
+ 1536 0020 E8000000 		call	find_val
+ 1536      00
+ 1537              	.LVL158:
+ 1538 0025 4883C418 		addq	$24, %rsp
+ 1539              	.LCFI92:
+ 1540              		.cfi_def_cfa_offset 48
+ 1541              	.LVL159:
+ 377:src/mcu_msg_parser.c ****     char qmark;
+ 378:src/mcu_msg_parser.c ****     mcu_msg_string_t res;
+ 379:src/mcu_msg_parser.c **** 
+ 380:src/mcu_msg_parser.c ****     if(p == NULL) {
+ 1542              		.loc 1 380 0
+ 1543 0029 4885C0   		testq	%rax, %rax
+ 1544 002c 7426     		je	.L131
+ 381:src/mcu_msg_parser.c ****         mcu_msg_destroy_string(&res);
+ 382:src/mcu_msg_parser.c ****         return res;
+ 383:src/mcu_msg_parser.c ****     }
+ 384:src/mcu_msg_parser.c ****         
+ 385:src/mcu_msg_parser.c ****     qmark = *p;
+ 1545              		.loc 1 385 0
+ 1546 002e 0FB630   		movzbl	(%rax), %esi
+ 1547              	.LVL160:
+ 386:src/mcu_msg_parser.c **** 
+ 387:src/mcu_msg_parser.c ****     if(qmark != '\'' && qmark != '"') { // qmark not found, this is not a string
+ 1548              		.loc 1 387 0
+ 1549 0031 4080FE27 		cmpb	$39, %sil
+ 1550 0035 0F95C1   		setne	%cl
+ 1551 0038 4080FE22 		cmpb	$34, %sil
+ 1552 003c 0F95C2   		setne	%dl
+ 1553 003f 84D1     		testb	%dl, %cl
+ 1554 0041 7524     		jne	.L132
+ 388:src/mcu_msg_parser.c ****         mcu_msg_destroy_string(&res);
+ 389:src/mcu_msg_parser.c ****         return res;
+ 390:src/mcu_msg_parser.c ****     }
+ 391:src/mcu_msg_parser.c **** 
+ 392:src/mcu_msg_parser.c ****     res.content = ++p;
+ 1555              		.loc 1 392 0
+ 1556 0043 4883C001 		addq	$1, %rax
+ 1557              	.LVL161:
+GAS LISTING /tmp/ccL93DFv.s 			page 39
+
+
+ 1558 0047 48890424 		movq	%rax, (%rsp)
+ 393:src/mcu_msg_parser.c ****     res.len = 0;
+ 1559              		.loc 1 393 0
+ 1560 004b 66C74424 		movw	$0, 8(%rsp)
+ 1560      080000
+ 394:src/mcu_msg_parser.c ****     while((p - obj.content) < obj.content_len && *p != qmark) {
+ 1561              		.loc 1 394 0
+ 1562 0052 EB37     		jmp	.L126
+ 1563              	.LVL162:
+ 1564              	.L131:
+ 381:src/mcu_msg_parser.c ****         return res;
+ 1565              		.loc 1 381 0
+ 1566 0054 4889E7   		movq	%rsp, %rdi
+ 1567 0057 E8000000 		call	mcu_msg_destroy_string
+ 1567      00
+ 1568              	.LVL163:
+ 382:src/mcu_msg_parser.c ****     }
+ 1569              		.loc 1 382 0
+ 1570 005c 488B0424 		movq	(%rsp), %rax
+ 1571 0060 488B5424 		movq	8(%rsp), %rdx
+ 1571      08
+ 1572 0065 EB44     		jmp	.L124
+ 1573              	.LVL164:
+ 1574              	.L132:
+ 388:src/mcu_msg_parser.c ****         return res;
+ 1575              		.loc 1 388 0
+ 1576 0067 4889E7   		movq	%rsp, %rdi
+ 1577 006a E8000000 		call	mcu_msg_destroy_string
+ 1577      00
+ 1578              	.LVL165:
+ 389:src/mcu_msg_parser.c ****     }
+ 1579              		.loc 1 389 0
+ 1580 006f 488B0424 		movq	(%rsp), %rax
+ 1581 0073 488B5424 		movq	8(%rsp), %rdx
+ 1581      08
+ 1582 0078 EB31     		jmp	.L124
+ 1583              	.LVL166:
+ 1584              	.L128:
+ 395:src/mcu_msg_parser.c ****         res.len++;
+ 1585              		.loc 1 395 0
+ 1586 007a 0FB77C24 		movzwl	8(%rsp), %edi
+ 1586      08
+ 1587 007f 8D5701   		leal	1(%rdi), %edx
+ 1588 0082 66895424 		movw	%dx, 8(%rsp)
+ 1588      08
+ 396:src/mcu_msg_parser.c ****         p++;
+ 1589              		.loc 1 396 0
+ 1590 0087 4883C001 		addq	$1, %rax
+ 1591              	.LVL167:
+ 1592              	.L126:
+ 394:src/mcu_msg_parser.c ****         res.len++;
+ 1593              		.loc 1 394 0
+ 1594 008b 4889C1   		movq	%rax, %rcx
+ 1595 008e 482B4C24 		subq	56(%rsp), %rcx
+ 1595      38
+ 1596 0093 0FB75424 		movzwl	66(%rsp), %edx
+ 1596      42
+GAS LISTING /tmp/ccL93DFv.s 			page 40
+
+
+ 1597 0098 4839D1   		cmpq	%rdx, %rcx
+ 1598 009b 7D05     		jge	.L127
+ 394:src/mcu_msg_parser.c ****         res.len++;
+ 1599              		.loc 1 394 0 is_stmt 0 discriminator 1
+ 1600 009d 403830   		cmpb	%sil, (%rax)
+ 1601 00a0 75D8     		jne	.L128
+ 1602              	.L127:
+ 397:src/mcu_msg_parser.c ****     }
+ 398:src/mcu_msg_parser.c ****     return res;
+ 1603              		.loc 1 398 0 is_stmt 1
+ 1604 00a2 488B0424 		movq	(%rsp), %rax
+ 1605              	.LVL168:
+ 1606 00a6 488B5424 		movq	8(%rsp), %rdx
+ 1606      08
+ 1607              	.LVL169:
+ 1608              	.L124:
+ 399:src/mcu_msg_parser.c **** }
+ 1609              		.loc 1 399 0
+ 1610 00ab 488B7424 		movq	24(%rsp), %rsi
+ 1610      18
+ 1611 00b0 64483334 		xorq	%fs:40, %rsi
+ 1611      25280000 
+ 1611      00
+ 1612 00b9 7505     		jne	.L133
+ 1613 00bb 4883C428 		addq	$40, %rsp
+ 1614              	.LCFI93:
+ 1615              		.cfi_remember_state
+ 1616              		.cfi_def_cfa_offset 8
+ 1617 00bf C3       		ret
+ 1618              	.L133:
+ 1619              	.LCFI94:
+ 1620              		.cfi_restore_state
+ 1621 00c0 E8000000 		call	__stack_chk_fail@PLT
+ 1621      00
+ 1622              	.LVL170:
+ 1623              		.cfi_endproc
+ 1624              	.LFE41:
+ 1626              		.section	.rodata.cst4,"aM",@progbits,4
+ 1627              		.align 4
+ 1628              	.LC0:
+ 1629 0000 CDCCCC3D 		.long	1036831949
+ 1630              		.align 4
+ 1631              	.LC2:
+ 1632 0004 00002041 		.long	1092616192
+ 1633              		.text
+ 1634              	.Letext0:
+ 1635              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h"
+ 1636              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1637              		.file 4 "/usr/include/x86_64-linux-gnu/bits/libio.h"
+ 1638              		.file 5 "/usr/include/stdio.h"
+ 1639              		.file 6 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 1640              		.file 7 "/usr/include/x86_64-linux-gnu/bits/stdint-intn.h"
+ 1641              		.file 8 "/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h"
+ 1642              		.file 9 "inc/mcu_msg_parser.h"
+GAS LISTING /tmp/ccL93DFv.s 			page 41
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 mcu_msg_parser.c
-     /tmp/ccvnMFoE.s:6      .text.is_ctrl_char:0000000000000000 is_ctrl_char
-     /tmp/ccvnMFoE.s:55     .text.is_valid_keyword_char:0000000000000000 is_valid_keyword_char
-     /tmp/ccvnMFoE.s:99     .text.str_len:0000000000000000 str_len
-     /tmp/ccvnMFoE.s:127    .text.find_keyword:0000000000000000 find_keyword
-     /tmp/ccvnMFoE.s:323    .text.find_val:0000000000000000 find_val
-     /tmp/ccvnMFoE.s:439    .text.mcu_msg_parser_get_obj:0000000000000000 mcu_msg_parser_get_obj
-     /tmp/ccvnMFoE.s:613    .text.mcu_msg_parser_get_int:0000000000000000 mcu_msg_parser_get_int
-     /tmp/ccvnMFoE.s:768    .text.mcu_msg_parser_get_float:0000000000000000 mcu_msg_parser_get_float
-     /tmp/ccvnMFoE.s:1003   .text.mcu_msg_parser_get_string:0000000000000000 mcu_msg_parser_get_string
-     /tmp/ccvnMFoE.s:1015   .rodata.cst4:0000000000000000 .LC0
-     /tmp/ccvnMFoE.s:1018   .rodata.cst4:0000000000000004 .LC2
+     /tmp/ccL93DFv.s:6      .text.is_ctrl_char:0000000000000000 is_ctrl_char
+     /tmp/ccL93DFv.s:134    .text.is_whitespace:0000000000000000 is_whitespace
+     /tmp/ccL93DFv.s:160    .text.is_valid_keyword_char:0000000000000000 is_valid_keyword_char
+     /tmp/ccL93DFv.s:204    .text.str_len:0000000000000000 str_len
+     /tmp/ccL93DFv.s:232    .text.skip_internal_str:0000000000000000 skip_internal_str
+     /tmp/ccL93DFv.s:289    .text.find_keyword:0000000000000000 find_keyword
+     /tmp/ccL93DFv.s:508    .text.find_val:0000000000000000 find_val
+     /tmp/ccL93DFv.s:627    .text.mcu_msg_destroy:0000000000000000 mcu_msg_destroy
+     /tmp/ccL93DFv.s:648    .text.mcu_msg_destroy_obj:0000000000000000 mcu_msg_destroy_obj
+     /tmp/ccL93DFv.s:669    .text.mcu_msg_destroy_string:0000000000000000 mcu_msg_destroy_string
+     /tmp/ccL93DFv.s:686    .text.mcu_msg_get:0000000000000000 mcu_msg_get
+     /tmp/ccL93DFv.s:869    .text.mcu_msg_parser_get_obj:0000000000000000 mcu_msg_parser_get_obj
+     /tmp/ccL93DFv.s:1049   .text.mcu_msg_parser_get_int:0000000000000000 mcu_msg_parser_get_int
+     /tmp/ccL93DFv.s:1236   .text.mcu_msg_parser_get_float:0000000000000000 mcu_msg_parser_get_float
+     /tmp/ccL93DFv.s:1514   .text.mcu_msg_parser_get_string:0000000000000000 mcu_msg_parser_get_string
+     /tmp/ccL93DFv.s:1628   .rodata.cst4:0000000000000000 .LC0
+     /tmp/ccL93DFv.s:1631   .rodata.cst4:0000000000000004 .LC2
 
-NO UNDEFINED SYMBOLS
+UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
+__stack_chk_fail
