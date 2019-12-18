@@ -24,24 +24,25 @@
 #define CTRL_CMD_FLAG       '!'
 
 
-
-void mcu_msg_destroy(mcu_msg_t *msg)
-{
-    mcu_msg_destroy(&msg->id);
-    mcu_msg_destroy(&msg->content);
-}
-
-void mcu_msg_destroy_obj(mcu_msg_obj_t *obj)
-{
-    mcu_msg_destroy(&obj->id);
-    mcu_msg_destroy(&obj->content);
-}
-
 void mcu_msg_destroy_string(mcu_msg_string_t *str)
 {
     str->s = NULL;
     str->len = 0;
 }
+
+void mcu_msg_destroy(mcu_msg_t *msg)
+{
+    mcu_msg_destroy_string(&msg->id);
+    mcu_msg_destroy_string(&msg->content);
+}
+
+void mcu_msg_destroy_obj(mcu_msg_obj_t *obj)
+{
+    mcu_msg_destroy_string(&obj->id);
+    mcu_msg_destroy_string(&obj->content);
+}
+
+
 
 /**
  * @brief Argument char is control char or not
@@ -395,21 +396,35 @@ mcu_msg_string_t mcu_msg_parser_get_string(mcu_msg_obj_t obj, char *key)
 }
 
 /**
- * @brief Default string copy
+ * @brief Default string copy to char array
  * 
- * @param dest 
- * @param source 
+ * @param dest destination char array
+ * @param source source string type
  */
-static void mcu_msg_str_copy(char *dest, mcu_msg_string_t source)
+static void mcu_msg_str_copy_to_chr_arr(char *dest, mcu_msg_string_t source)
 {
     mcu_msg_size_t i;
     for(i = 0; i < source.len; *(dest + i) = *(source.s + i), i++);
 }
 
+/**
+ * @brief Default string copy to string type
+ * 
+ * @param dest destination string type
+ * @param source source string type
+ */
+static void mcu_msg_str_copy(mcu_msg_string_t dest, mcu_msg_string_t source)
+{
+    mcu_msg_size_t i;
+    for(i = 0, dest.len = source.len; i < source.len; *(dest.s + i) = *(source.s + i), i++);
+}
 
-mcu_msg_string_hnd_t mcu_msg_string_hnd_init(void (*print)(mcu_msg_string_t))
+
+mcu_msg_string_hnd_t mcu_msg_string_hnd_create(void (*print)(mcu_msg_string_t))
 {
     mcu_msg_string_hnd_t hnd;
+    hnd.copy_to_chr_arr = mcu_msg_str_copy_to_chr_arr;
     hnd.copy = mcu_msg_str_copy;
     hnd.print = print;
+    return hnd;
 }

@@ -14,17 +14,19 @@
 #include <string.h>
 #include "mcu_msg_parser.h"
 
+/*string printer on i386*/
+void printf_mcu_msg_str(mcu_msg_string_t str);
 
 const char *test_str1 = "#test_msg {!CMD1 @obj1($key11 =   -1123334567  ; $key12 = 'string \"value\"') @obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
 
 
 int main()
 {
-    int i;
+
     
     mcu_msg_t msg;
     mcu_msg_obj_t obj1, obj2;
-    mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_init(printf_mcu_msg_str);
+    mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_create(printf_mcu_msg_str);
 
     printf("TEST mcu-msg-parser\n");
     printf("-------------------\n");
@@ -47,18 +49,14 @@ int main()
     printf(">> getting obj1...\n");
     obj1 = mcu_msg_parser_get_obj(msg, "obj1");
     printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
-    str_hnd.print(obj1.id);
-    printf(":");
-    str_hnd.print(obj1.content);
+    str_hnd.print(obj1.id); printf(":"); str_hnd.print(obj1.content);
     printf("\n\n");
 
     //##############################################################################################
     printf(">> getting obj2...\n");
     obj2 = mcu_msg_parser_get_obj(msg, "obj2");
     printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
-    for(i = 0; i < obj2.id_len; printf("%c",*(obj2.id + i)), i++);
-    printf(":");
-    for(i = 0; i < obj2.content_len; printf("%c",*(obj2.content + i)), i++);
+    str_hnd.print(obj2.id); printf(":"); str_hnd.print(obj2.content);
     printf("\n\n");
     
     //##############################################################################################
@@ -76,11 +74,10 @@ int main()
     //##############################################################################################
     printf(">> getting obj1->key12 string...\n");
     mcu_msg_string_t str = mcu_msg_parser_get_string(obj1, "key12");
-    if(str.content != NULL) {
-        for(i = 0; i < str.len; printf("%c", *(str.content + i)), i++);
-        printf("\n");
+    if(str.s != NULL) {
+        str_hnd.print(str); printf("\n\n");
     } else {
-        printf("error getting string\n");
+        printf("error getting string\n\n");
     }
     
     return 0;
@@ -89,5 +86,5 @@ int main()
 void printf_mcu_msg_str(mcu_msg_string_t str)
 {
     mcu_msg_size_t i;
-    for(i = 0; i < str.len; printf("%c", *(str.s + i)));
+    for(i = 0; i < str.len; printf("%c", *(str.s + i++)));
 }

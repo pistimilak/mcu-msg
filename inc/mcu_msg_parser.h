@@ -12,32 +12,25 @@ typedef uint16_t mcu_msg_size_t;
 
 typedef struct {
     char *s;                  // pointer to string content in the buffer
-    mcu_msg_size_t len;             // 
+    mcu_msg_size_t len;       // string length
 } mcu_msg_string_t;
 
 
 typedef struct {
-    void (*copy)(char *dest, mcu_msg_string_t source);
-    void (*print)(mcu_msg_string_t str);
+    void (*copy_to_chr_arr)(char *, mcu_msg_string_t);  // copy strint type to char array function pointer
+    void (*copy)(mcu_msg_string_t, mcu_msg_string_t);   // copy string type to an other one function pointer
+    void (*print)(mcu_msg_string_t);                    // print string type function pointer
 } mcu_msg_string_hnd_t;
 
 
 typedef struct {
-    // char *id;
-    // char *content;
-    // mcu_msg_size_t id_len;
-    // mcu_msg_size_t content_len;
-    mcu_msg_string_t id;
-    mcu_msg_string_t content;
+    mcu_msg_string_t id;        // id string
+    mcu_msg_string_t content;   // content string
 } mcu_msg_t;
 
 typedef struct {
-    // char *id;                     // pointer to the object name in the buffer
-    // char *content;                  // pointer to the object content in the buffer
-    // mcu_msg_size_t id_len;        // object name length
-    // mcu_msg_size_t content_len;     // content length
-    mcu_msg_string_t id;
-    mcu_msg_string_t content;
+    mcu_msg_string_t id;        // id string
+    mcu_msg_string_t content;   // content string
 } mcu_msg_obj_t;
 
 
@@ -50,6 +43,6 @@ mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id);
 int8_t mcu_msg_parser_get_int(int *res, mcu_msg_obj_t obj, char *key);
 int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key);
 mcu_msg_string_t mcu_msg_parser_get_string(mcu_msg_obj_t obj, char *key);
-mcu_msg_string_hnd_t mcu_msg_string_hnd_init(void (*print)(mcu_msg_string_t));
+mcu_msg_string_hnd_t mcu_msg_string_hnd_create(void (*print)(mcu_msg_string_t));
 
 #endif
