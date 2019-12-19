@@ -2,18 +2,42 @@
 #define __MCU_MSG_PARSER__
 
 #include <inttypes.h>
+#include "mcu_msg_cfg.h"
+
 
 #ifndef NULL
 #define NULL    ((void *)0)
 #endif
 
 
-typedef uint16_t mcu_msg_size_t;
 
+
+/*
+Primitive string type for other complex objects and string
+Length is necessary to use same buffer where there isn't 0 terminator
+*/
 typedef struct {
     char *s;                  // pointer to string content in the buffer
     mcu_msg_size_t len;       // string length
 } mcu_msg_string_t;
+
+
+/*Int type for wrapper*/
+typedef struct {
+    mcu_msg_string_t id;
+    int val;
+} mcu_msg_int_t;
+
+
+/*Float type for wrapper*/
+typedef struct {
+    mcu_msg_string_t id;
+    float val;
+} mcu_msg_float_t;
+
+
+/*cmd type for wrapper*/
+typedef mcu_msg_string_t mcu_msg_cmd_t;
 
 
 typedef struct {
@@ -31,9 +55,18 @@ typedef struct {
 typedef struct {
     mcu_msg_string_t id;        // id string
     mcu_msg_string_t content;   // content string
+#if MCU_MSG_USE_WRAPPER
+    mcu_msg_obj_t *next;
+#endif
 } mcu_msg_obj_t;
 
-
+#if MCU_MSG_USE_WRAPPER
+typedef struct {
+    mcu_msg_string_t id;
+    mcu_msg_obj_t *obj_queue;
+    mcu_msg_cmd_t *cmd_queue;
+} mcu_msg_wrapper_t;
+#endif
 
 /**
  * @brief 
