@@ -12,17 +12,17 @@
 #include "mcu_msg_parser.h"
 
 /*Control chars*/
-#define CTRL_MSG_FLAG       '#'
-#define CTRL_START_MSG      '{'
-#define CTRL_STOP_MSG       '}'
-#define CTRL_START_OBJ      '('
-#define CTRL_STOP_OBJ       ')'
-#define CTRL_OBJ_FLAG       '@'
-#define CTRL_KEY_FLAG       '$'
-#define CTRL_KEY_SEP        ';'
-#define CTRL_KEY_EQU        '='
-#define CTRL_CMD_FLAG       '!'
-
+#define CTRL_MSG_FLAG           '#'
+#define CTRL_START_MSG          '{'
+#define CTRL_STOP_MSG           '}'
+#define CTRL_START_OBJ          '('
+#define CTRL_STOP_OBJ           ')'
+#define CTRL_OBJ_FLAG           '@'
+#define CTRL_KEY_FLAG           '$'
+#define CTRL_KEY_SEP            ';'
+#define CTRL_KEY_EQU            '='
+#define CTRL_CMD_START_FLAG     '<'
+#define CTRL_CMD_STOP_FLAG      '>'
 
 void mcu_msg_destroy_string(mcu_msg_string_t *str)
 {
@@ -62,7 +62,8 @@ static uint8_t is_ctrl_char(char c)
         case CTRL_KEY_FLAG:
         case CTRL_KEY_SEP:
         case CTRL_KEY_EQU:
-        case CTRL_CMD_FLAG:
+        case CTRL_CMD_START_FLAG:
+        case CTRL_CMD_STOP_FLAG:
             return 1;
         default:
             return 0;
@@ -155,7 +156,6 @@ static char *find_keyword(char *msg, mcu_msg_size_t len, char *keyword, char fla
         }
         if(((p - msg) < len - 1) && *p == flagc) {
             loc = p + 1;
-            // exp_key = keyword;
             equal = 1;
             for(i = 0; (loc + i - msg) < len && i < key_len; i++) {
                 if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
@@ -250,6 +250,17 @@ mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id)
         res.content.len++;
     }
     return res;
+}
+
+uint8_t mcu_msg_is_cmd_att(mcu_msg_t msg, char *cmd_id)
+{
+    char *loc = find_keyword(msg.content.s, msg.content.len, cmd_id, CTRL_CMD_START_FLAG, CTRL_CMD_STOP_FLAG); //object start with @ and terminated with space or '('
+    char *p;
+    if(loc == NULL) { //if cmd not found, return 0
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)

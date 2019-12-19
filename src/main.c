@@ -17,7 +17,7 @@
 /*string printer on i386*/
 void printf_mcu_msg_str(mcu_msg_string_t str);
 
-const char *test_str1 = "#test_msg {!CMD1 @obj1($key11 =   -1123334567  ; $key12 = 'string \"value\"') @obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
+const char *test_str1 = "#test_msg{<CMD1>\t\t @obj1($key11 =\t-1123334567  ; $key12 = 'string \"value\"')\n@obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
 
 
 int main()
