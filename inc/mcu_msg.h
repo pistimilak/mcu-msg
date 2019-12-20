@@ -37,7 +37,13 @@ typedef struct {
 
 
 /*cmd type for wrapper*/
-typedef mcu_msg_string_t mcu_msg_cmd_t;
+
+typedef struct {
+    mcu_msg_string_t cmd;
+#if MCU_MSG_USE_WRAPPER
+    struct mcu_msg_cmd_t *next;
+#endif
+} mcu_msg_cmd_t;
 
 
 typedef struct {
@@ -55,10 +61,8 @@ typedef struct {
 typedef struct {
     mcu_msg_string_t id;        // id string
     mcu_msg_string_t content;   // content string
-#if MCU_MSG_USE_WRAPPER
-    mcu_msg_obj_t *next;
-#endif
 } mcu_msg_obj_t;
+
 
 #if MCU_MSG_USE_WRAPPER
 typedef struct {

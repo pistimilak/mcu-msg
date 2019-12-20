@@ -1,4 +1,4 @@
-GAS LISTING /tmp/ccccU30j.s 			page 1
+GAS LISTING /tmp/cciFaveB.s 			page 1
 
 
    1              		.file	"main.c"
@@ -23,83 +23,107 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   12:src/main.c    **** #include <stdio.h>
   13:src/main.c    **** #include <stdlib.h>
   14:src/main.c    **** #include <string.h>
-  15:src/main.c    **** #include "mcu_msg_parser.h"
-  16:src/main.c    **** 
-  17:src/main.c    **** /*string printer on i386*/
-  18:src/main.c    **** void printf_mcu_msg_str(mcu_msg_string_t str);
-  19:src/main.c    **** 
-  20:src/main.c    **** const char *test_str1 = "#test_msg {!CMD1 @obj1($key11 =   -1123334567  ; $key12 = 'string \"value\
-  21:src/main.c    **** 
-  22:src/main.c    **** 
-  23:src/main.c    **** int main()
-  24:src/main.c    **** {
-  25:src/main.c    **** 
-  26:src/main.c    ****     
-  27:src/main.c    ****     mcu_msg_t msg;
-  28:src/main.c    ****     mcu_msg_obj_t obj1, obj2;
-  29:src/main.c    ****     mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_create(printf_mcu_msg_str);
-  30:src/main.c    **** 
-  31:src/main.c    ****     printf("TEST mcu-msg-parser\n");
-  32:src/main.c    ****     printf("-------------------\n");
-  33:src/main.c    **** 
-  34:src/main.c    ****     printf("test_str1 = \"%s\"\n\n", test_str1);
+  15:src/main.c    **** #include <time.h>
+  16:src/main.c    **** #include "mcu_msg.h"
+  17:src/main.c    **** 
+  18:src/main.c    **** /*string printer on i386*/
+  19:src/main.c    **** void printf_mcu_msg_str(mcu_msg_string_t str);
+  20:src/main.c    **** 
+  21:src/main.c    **** const char *test_str1 = "#test_msg{<CMD1>\t\t @obj1($key11 =\t-1123334567  ; $key12 = 'string \"val
+  22:src/main.c    **** \r@obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)<CMD_last>}";
+  23:src/main.c    **** 
+  24:src/main.c    **** 
+  25:src/main.c    **** int main()
+  26:src/main.c    **** {
+  27:src/main.c    ****     /*start the clock*/
+  28:src/main.c    ****     clock_t begin = clock();
+  29:src/main.c    ****     clock_t end;
+  30:src/main.c    ****     double exec_time = 0.0;
+  31:src/main.c    **** 
+  32:src/main.c    ****     mcu_msg_t msg;
+  33:src/main.c    ****     mcu_msg_obj_t obj1, obj2;
+  34:src/main.c    ****     mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_create(printf_mcu_msg_str);
   35:src/main.c    **** 
-  36:src/main.c    ****     printf(">> getting test_msg...\n");
-  37:src/main.c    ****     msg = mcu_msg_get(test_str1, "test_msg", strlen(test_str1));
-  38:src/main.c    ****     if(msg.content.s != NULL) {
-  39:src/main.c    ****         printf("msg.id_len: %d msg.content_len: %d\n", msg.id.len, msg.content.len);
-  40:src/main.c    ****         str_hnd.print(msg.id);
-  41:src/main.c    ****         printf(":");
-  42:src/main.c    ****         str_hnd.print(msg.content);
-  43:src/main.c    ****         printf("\n\n");
-  44:src/main.c    ****     } else {
-  45:src/main.c    ****         printf("message not found!\n\n");
-  46:src/main.c    ****     }
-  47:src/main.c    **** 
-  48:src/main.c    ****     //#############################################################################################
-  49:src/main.c    ****     printf(">> getting obj1...\n");
-GAS LISTING /tmp/ccccU30j.s 			page 2
+  36:src/main.c    ****     printf("TEST mcu-msg-parser\n");
+  37:src/main.c    ****     printf("-------------------\n");
+  38:src/main.c    **** 
+  39:src/main.c    ****     printf("test_str1 = \"%s\"\n\n", test_str1);
+  40:src/main.c    **** 
+  41:src/main.c    ****     //#############################################################################################
+  42:src/main.c    ****     printf(">> getting test_msg...\n");
+  43:src/main.c    ****     msg = mcu_msg_get(test_str1, "test_msg", strlen(test_str1));
+  44:src/main.c    ****     if(msg.content.s != NULL) {
+  45:src/main.c    ****         printf("msg.id_len: %d msg.content_len: %d\n", msg.id.len, msg.content.len);
+  46:src/main.c    ****         str_hnd.print(msg.id);
+  47:src/main.c    ****         printf(":");
+  48:src/main.c    ****         str_hnd.print(msg.content);
+  49:src/main.c    ****         printf("\n\n");
+GAS LISTING /tmp/cciFaveB.s 			page 2
 
 
-  50:src/main.c    ****     obj1 = mcu_msg_parser_get_obj(msg, "obj1");
-  51:src/main.c    ****     printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
-  52:src/main.c    ****     str_hnd.print(obj1.id); printf(":"); str_hnd.print(obj1.content);
-  53:src/main.c    ****     printf("\n\n");
-  54:src/main.c    **** 
-  55:src/main.c    ****     //#############################################################################################
-  56:src/main.c    ****     printf(">> getting obj2...\n");
-  57:src/main.c    ****     obj2 = mcu_msg_parser_get_obj(msg, "obj2");
-  58:src/main.c    ****     printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
-  59:src/main.c    ****     str_hnd.print(obj2.id); printf(":"); str_hnd.print(obj2.content);
-  60:src/main.c    ****     printf("\n\n");
-  61:src/main.c    ****     
-  62:src/main.c    ****     //#############################################################################################
-  63:src/main.c    ****     printf(">> getting obj1->key11 intiger...\n");
-  64:src/main.c    ****     int ival = 0, res;
-  65:src/main.c    ****     float fval = 0.0;
-  66:src/main.c    ****     res = mcu_msg_parser_get_int(&ival, obj1, "key11");
-  67:src/main.c    ****     printf("r = %d ival = %d\n\n", res, ival);
-  68:src/main.c    ****     
-  69:src/main.c    ****     //#############################################################################################
-  70:src/main.c    ****     printf(">> getting obj2->key21 float...\n");
-  71:src/main.c    ****     res = mcu_msg_parser_get_float(&fval, obj2, "key21");
-  72:src/main.c    ****     printf("r = %d fval = %.11f\n\n", res, fval);
-  73:src/main.c    **** 
-  74:src/main.c    ****     //#############################################################################################
-  75:src/main.c    ****     printf(">> getting obj1->key12 string...\n");
-  76:src/main.c    ****     mcu_msg_string_t str = mcu_msg_parser_get_string(obj1, "key12");
-  77:src/main.c    ****     if(str.s != NULL) {
-  78:src/main.c    ****         str_hnd.print(str); printf("\n\n");
-  79:src/main.c    ****     } else {
-  80:src/main.c    ****         printf("error getting string\n\n");
-  81:src/main.c    ****     }
-  82:src/main.c    ****     
-  83:src/main.c    ****     return 0;
-  84:src/main.c    **** }
-  85:src/main.c    **** 
-  86:src/main.c    **** void printf_mcu_msg_str(mcu_msg_string_t str)
-  87:src/main.c    **** {
-  10              		.loc 1 87 0
+  50:src/main.c    ****     } else {
+  51:src/main.c    ****         printf("message not found!\n\n");
+  52:src/main.c    ****     }
+  53:src/main.c    **** 
+  54:src/main.c    ****     //#############################################################################################
+  55:src/main.c    ****     printf(">> getting CMD1 cmd...\n");
+  56:src/main.c    ****     printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD1") ? "True" : "False");
+  57:src/main.c    **** 
+  58:src/main.c    ****     printf(">> getting CMD2 cmd...\n");
+  59:src/main.c    ****     printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD2") ? "True" : "False");
+  60:src/main.c    **** 
+  61:src/main.c    ****     printf(">> getting CMD_last cmd...\n");
+  62:src/main.c    ****     printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD_last") ? "True" : "False");
+  63:src/main.c    **** 
+  64:src/main.c    ****     //#############################################################################################
+  65:src/main.c    ****     printf(">> getting obj1...\n");
+  66:src/main.c    ****     obj1 = mcu_msg_parser_get_obj(msg, "obj1");
+  67:src/main.c    ****     printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
+  68:src/main.c    ****     str_hnd.print(obj1.id); printf(":"); str_hnd.print(obj1.content);
+  69:src/main.c    ****     printf("\n\n");
+  70:src/main.c    **** 
+  71:src/main.c    ****     //#############################################################################################
+  72:src/main.c    ****     printf(">> getting obj2...\n");
+  73:src/main.c    ****     obj2 = mcu_msg_parser_get_obj(msg, "obj2");
+  74:src/main.c    ****     printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
+  75:src/main.c    ****     str_hnd.print(obj2.id); printf(":"); str_hnd.print(obj2.content);
+  76:src/main.c    ****     printf("\n\n");
+  77:src/main.c    ****     
+  78:src/main.c    ****     //#############################################################################################
+  79:src/main.c    ****     printf(">> getting obj1->key11 intiger...\n");
+  80:src/main.c    ****     int ival = 0, res;
+  81:src/main.c    ****     float fval = 0.0;
+  82:src/main.c    ****     res = mcu_msg_parser_get_int(&ival, obj1, "key11");
+  83:src/main.c    ****     printf("r = %d ival = %d\n\n", res, ival);
+  84:src/main.c    ****     
+  85:src/main.c    ****     //#############################################################################################
+  86:src/main.c    ****     printf(">> getting obj2->key21 float...\n");
+  87:src/main.c    ****     res = mcu_msg_parser_get_float(&fval, obj2, "key21");
+  88:src/main.c    ****     printf("r = %d fval = %.11f\n\n", res, fval);
+  89:src/main.c    **** 
+  90:src/main.c    ****     //#############################################################################################
+  91:src/main.c    ****     printf(">> getting obj1->key12 string...\n");
+  92:src/main.c    ****     mcu_msg_string_t str = mcu_msg_parser_get_string(obj1, "key12");
+  93:src/main.c    ****     if(str.s != NULL) {
+  94:src/main.c    ****         str_hnd.print(str); printf("\n\n");
+  95:src/main.c    ****     } else {
+  96:src/main.c    ****         printf("error getting string\n\n");
+  97:src/main.c    ****     }
+  98:src/main.c    ****     
+  99:src/main.c    ****     end = clock();
+ 100:src/main.c    **** 
+ 101:src/main.c    ****     exec_time = (double)(end - begin) / CLOCKS_PER_SEC;
+ 102:src/main.c    **** 
+ 103:src/main.c    ****     printf("Execution time: %f s\n", exec_time);
+ 104:src/main.c    ****     return 0;
+ 105:src/main.c    **** }
+ 106:src/main.c    **** 
+GAS LISTING /tmp/cciFaveB.s 			page 3
+
+
+ 107:src/main.c    **** void printf_mcu_msg_str(mcu_msg_string_t str)
+ 108:src/main.c    **** {
+  10              		.loc 1 108 0
   11              		.cfi_startproc
   12              	.LVL0:
   13 0000 4154     		pushq	%r12
@@ -117,26 +141,23 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   25 0004 4989FC   		movq	%rdi, %r12
   26 0007 4889F5   		movq	%rsi, %rbp
   27              	.LVL1:
-  88:src/main.c    ****     mcu_msg_size_t i;
-GAS LISTING /tmp/ccccU30j.s 			page 3
-
-
-  89:src/main.c    ****     for(i = 0; i < str.len; printf("%c", *(str.s + i++)));
-  28              		.loc 1 89 0
+ 109:src/main.c    ****     mcu_msg_size_t i;
+ 110:src/main.c    ****     for(i = 0; i < str.len; printf("%c", *(str.s + i++)));
+  28              		.loc 1 110 0
   29 000a B8000000 		movl	$0, %eax
   29      00
   30 000f EB12     		jmp	.L2
   31              	.LVL2:
   32              	.L3:
-  33              		.loc 1 89 0 is_stmt 0 discriminator 3
+  33              		.loc 1 110 0 is_stmt 0 discriminator 3
   34 0011 8D5801   		leal	1(%rax), %ebx
   35              	.LVL3:
   36 0014 0FB7C0   		movzwl	%ax, %eax
   37 0017 410FBE3C 		movsbl	(%r12,%rax), %edi
   37      04
   38              	.LVL4:
-  39              	.LBB50:
-  40              	.LBB51:
+  39              	.LBB64:
+  40              	.LBB65:
   41              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
    1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
    2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2018 Free Software Foundation, Inc.
@@ -157,6 +178,9 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
   18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
   19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+GAS LISTING /tmp/cciFaveB.s 			page 4
+
+
   20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
   21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
   22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
@@ -178,9 +202,6 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   38:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
   39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
   40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
-GAS LISTING /tmp/ccccU30j.s 			page 4
-
-
   41:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
   42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
   43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
@@ -217,6 +238,9 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
   75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, _G_va_list __ap))
   76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+GAS LISTING /tmp/cciFaveB.s 			page 5
+
+
   77:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
   78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
   79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
@@ -238,9 +262,6 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
   96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
   97:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
-GAS LISTING /tmp/ccccU30j.s 			page 5
-
-
   98:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
   99:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
  100:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
@@ -252,17 +273,17 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   43 001c E8000000 		call	putchar@PLT
   43      00
   44              	.LVL5:
-  45              	.LBE51:
-  46              	.LBE50:
-  47              		.loc 1 89 0 discriminator 3
+  45              	.LBE65:
+  46              	.LBE64:
+  47              		.loc 1 110 0 discriminator 3
   48 0021 89D8     		movl	%ebx, %eax
   49              	.LVL6:
   50              	.L2:
-  51              		.loc 1 89 0 is_stmt 0 discriminator 1
+  51              		.loc 1 110 0 is_stmt 0 discriminator 1
   52 0023 6639C5   		cmpw	%ax, %bp
   53 0026 77E9     		ja	.L3
-  90:src/main.c    **** }
-  54              		.loc 1 90 0 is_stmt 1
+ 111:src/main.c    **** }
+  54              		.loc 1 111 0 is_stmt 1
   55 0028 5B       		popq	%rbx
   56              	.LCFI3:
   57              		.cfi_def_cfa_offset 24
@@ -277,801 +298,1119 @@ GAS LISTING /tmp/ccccU30j.s 			page 1
   66              	.LFE57:
   68              		.section	.rodata.main.str1.1,"aMS",@progbits,1
   69              	.LC0:
-  70 0000 54455354 		.string	"TEST mcu-msg-parser"
-  70      206D6375 
-  70      2D6D7367 
-  70      2D706172 
-  70      73657200 
+GAS LISTING /tmp/cciFaveB.s 			page 6
+
+
+  70 0000 54727565 		.string	"True"
+  70      00
   71              	.LC1:
-  72 0014 2D2D2D2D 		.string	"-------------------"
-  72      2D2D2D2D 
-  72      2D2D2D2D 
-  72      2D2D2D2D 
-  72      2D2D2D00 
+  72 0005 46616C73 		.string	"False"
+  72      6500
   73              	.LC2:
-  74 0028 74657374 		.string	"test_str1 = \"%s\"\n\n"
-  74      5F737472 
-  74      31203D20 
-  74      22257322 
-  74      0A0A00
+  74 000b 54455354 		.string	"TEST mcu-msg-parser"
+  74      206D6375 
+  74      2D6D7367 
+  74      2D706172 
+  74      73657200 
   75              	.LC3:
-  76 003b 3E3E2067 		.string	">> getting test_msg..."
-  76      65747469 
-  76      6E672074 
-GAS LISTING /tmp/ccccU30j.s 			page 6
-
-
-  76      6573745F 
-  76      6D73672E 
+  76 001f 2D2D2D2D 		.string	"-------------------"
+  76      2D2D2D2D 
+  76      2D2D2D2D 
+  76      2D2D2D2D 
+  76      2D2D2D00 
   77              	.LC4:
-  78 0052 74657374 		.string	"test_msg"
-  78      5F6D7367 
-  78      00
-  79              		.section	.rodata.main.str1.8,"aMS",@progbits,1
-  80              		.align 8
-  81              	.LC5:
-  82 0000 6D73672E 		.string	"msg.id_len: %d msg.content_len: %d\n"
-  82      69645F6C 
-  82      656E3A20 
-  82      2564206D 
-  82      73672E63 
-  83              		.section	.rodata.main.str1.1
-  84              	.LC6:
-  85 005b 0A00     		.string	"\n"
-  86              	.LC7:
-  87 005d 6D657373 		.string	"message not found!\n"
-  87      61676520 
-  87      6E6F7420 
-  87      666F756E 
-  87      64210A00 
+  78 0033 74657374 		.string	"test_str1 = \"%s\"\n\n"
+  78      5F737472 
+  78      31203D20 
+  78      22257322 
+  78      0A0A00
+  79              	.LC5:
+  80 0046 3E3E2067 		.string	">> getting test_msg..."
+  80      65747469 
+  80      6E672074 
+  80      6573745F 
+  80      6D73672E 
+  81              	.LC6:
+  82 005d 74657374 		.string	"test_msg"
+  82      5F6D7367 
+  82      00
+  83              		.section	.rodata.main.str1.8,"aMS",@progbits,1
+  84              		.align 8
+  85              	.LC7:
+  86 0000 6D73672E 		.string	"msg.id_len: %d msg.content_len: %d\n"
+  86      69645F6C 
+  86      656E3A20 
+  86      2564206D 
+  86      73672E63 
+  87              		.section	.rodata.main.str1.1
   88              	.LC8:
-  89 0071 3E3E2067 		.string	">> getting obj1..."
-  89      65747469 
-  89      6E67206F 
-  89      626A312E 
-  89      2E2E00
+  89 0066 0A00     		.string	"\n"
   90              	.LC9:
-  91 0084 6F626A31 		.string	"obj1"
-  91      00
-  92              		.section	.rodata.main.str1.8
-  93 0024 00000000 		.align 8
-  94              	.LC10:
-  95 0028 6F626A31 		.string	"obj1.id_len: %d obj1.content_len: %d\n"
-  95      2E69645F 
-  95      6C656E3A 
-  95      20256420 
-  95      6F626A31 
-  96              		.section	.rodata.main.str1.1
-  97              	.LC11:
-  98 0089 3E3E2067 		.string	">> getting obj2..."
-  98      65747469 
-  98      6E67206F 
-  98      626A322E 
-  98      2E2E00
-  99              	.LC12:
- 100 009c 6F626A32 		.string	"obj2"
- 100      00
- 101              		.section	.rodata.main.str1.8
- 102 004e 0000     		.align 8
- 103              	.LC13:
- 104 0050 6F626A32 		.string	"obj2.id_len: %d obj2.content_len: %d\n"
- 104      2E69645F 
- 104      6C656E3A 
- 104      20256420 
-GAS LISTING /tmp/ccccU30j.s 			page 7
+  91 0068 6D657373 		.string	"message not found!\n"
+  91      61676520 
+  91      6E6F7420 
+  91      666F756E 
+  91      64210A00 
+  92              	.LC10:
+  93 007c 3E3E2067 		.string	">> getting CMD1 cmd..."
+  93      65747469 
+  93      6E672043 
+  93      4D443120 
+  93      636D642E 
+  94              	.LC11:
+GAS LISTING /tmp/cciFaveB.s 			page 7
 
 
- 104      6F626A32 
- 105 0076 0000     		.align 8
- 106              	.LC14:
- 107 0078 3E3E2067 		.string	">> getting obj1->key11 intiger..."
+  95 0093 434D4431 		.string	"CMD1"
+  95      00
+  96              	.LC12:
+  97 0098 25730A0A 		.string	"%s\n\n"
+  97      00
+  98              	.LC13:
+  99 009d 3E3E2067 		.string	">> getting CMD2 cmd..."
+  99      65747469 
+  99      6E672043 
+  99      4D443220 
+  99      636D642E 
+ 100              	.LC14:
+ 101 00b4 434D4432 		.string	"CMD2"
+ 101      00
+ 102              	.LC15:
+ 103 00b9 3E3E2067 		.string	">> getting CMD_last cmd..."
+ 103      65747469 
+ 103      6E672043 
+ 103      4D445F6C 
+ 103      61737420 
+ 104              	.LC16:
+ 105 00d4 434D445F 		.string	"CMD_last"
+ 105      6C617374 
+ 105      00
+ 106              	.LC17:
+ 107 00dd 3E3E2067 		.string	">> getting obj1..."
  107      65747469 
  107      6E67206F 
- 107      626A312D 
- 107      3E6B6579 
- 108              		.section	.rodata.main.str1.1
- 109              	.LC16:
- 110 00a1 6B657931 		.string	"key11"
- 110      3100
- 111              	.LC17:
- 112 00a7 72203D20 		.string	"r = %d ival = %d\n\n"
- 112      25642069 
- 112      76616C20 
- 112      3D202564 
- 112      0A0A00
- 113              		.section	.rodata.main.str1.8
- 114 009a 00000000 		.align 8
- 114      0000
- 115              	.LC18:
- 116 00a0 3E3E2067 		.string	">> getting obj2->key21 float..."
+ 107      626A312E 
+ 107      2E2E00
+ 108              	.LC18:
+ 109 00f0 6F626A31 		.string	"obj1"
+ 109      00
+ 110              		.section	.rodata.main.str1.8
+ 111 0024 00000000 		.align 8
+ 112              	.LC19:
+ 113 0028 6F626A31 		.string	"obj1.id_len: %d obj1.content_len: %d\n"
+ 113      2E69645F 
+ 113      6C656E3A 
+ 113      20256420 
+ 113      6F626A31 
+ 114              		.section	.rodata.main.str1.1
+ 115              	.LC20:
+ 116 00f5 3E3E2067 		.string	">> getting obj2..."
  116      65747469 
  116      6E67206F 
- 116      626A322D 
- 116      3E6B6579 
- 117              		.section	.rodata.main.str1.1
- 118              	.LC19:
- 119 00ba 6B657932 		.string	"key21"
- 119      3100
- 120              	.LC20:
- 121 00c0 72203D20 		.string	"r = %d fval = %.11f\n\n"
- 121      25642066 
- 121      76616C20 
- 121      3D20252E 
- 121      3131660A 
- 122              		.section	.rodata.main.str1.8
- 123              		.align 8
- 124              	.LC21:
- 125 00c0 3E3E2067 		.string	">> getting obj1->key12 string..."
+ 116      626A322E 
+ 116      2E2E00
+ 117              	.LC21:
+ 118 0108 6F626A32 		.string	"obj2"
+ 118      00
+ 119              		.section	.rodata.main.str1.8
+ 120 004e 0000     		.align 8
+ 121              	.LC22:
+ 122 0050 6F626A32 		.string	"obj2.id_len: %d obj2.content_len: %d\n"
+ 122      2E69645F 
+ 122      6C656E3A 
+GAS LISTING /tmp/cciFaveB.s 			page 8
+
+
+ 122      20256420 
+ 122      6F626A32 
+ 123 0076 0000     		.align 8
+ 124              	.LC23:
+ 125 0078 3E3E2067 		.string	">> getting obj1->key11 intiger..."
  125      65747469 
  125      6E67206F 
  125      626A312D 
  125      3E6B6579 
  126              		.section	.rodata.main.str1.1
- 127              	.LC22:
- 128 00d6 6B657931 		.string	"key12"
- 128      3200
- 129              	.LC23:
- 130 00dc 6572726F 		.string	"error getting string\n"
- 130      72206765 
- 130      7474696E 
- 130      67207374 
- 130      72696E67 
- 131              		.section	.text.main,"ax",@progbits
- 132              		.globl	main
-GAS LISTING /tmp/ccccU30j.s 			page 8
+ 127              	.LC25:
+ 128 010d 6B657931 		.string	"key11"
+ 128      3100
+ 129              	.LC26:
+ 130 0113 72203D20 		.string	"r = %d ival = %d\n\n"
+ 130      25642069 
+ 130      76616C20 
+ 130      3D202564 
+ 130      0A0A00
+ 131              		.section	.rodata.main.str1.8
+ 132 009a 00000000 		.align 8
+ 132      0000
+ 133              	.LC27:
+ 134 00a0 3E3E2067 		.string	">> getting obj2->key21 float..."
+ 134      65747469 
+ 134      6E67206F 
+ 134      626A322D 
+ 134      3E6B6579 
+ 135              		.section	.rodata.main.str1.1
+ 136              	.LC28:
+ 137 0126 6B657932 		.string	"key21"
+ 137      3100
+ 138              	.LC29:
+ 139 012c 72203D20 		.string	"r = %d fval = %.11f\n\n"
+ 139      25642066 
+ 139      76616C20 
+ 139      3D20252E 
+ 139      3131660A 
+ 140              		.section	.rodata.main.str1.8
+ 141              		.align 8
+ 142              	.LC30:
+ 143 00c0 3E3E2067 		.string	">> getting obj1->key12 string..."
+ 143      65747469 
+ 143      6E67206F 
+ 143      626A312D 
+ 143      3E6B6579 
+ 144              		.section	.rodata.main.str1.1
+ 145              	.LC31:
+ 146 0142 6B657931 		.string	"key12"
+ 146      3200
+ 147              	.LC32:
+ 148 0148 6572726F 		.string	"error getting string\n"
+ 148      72206765 
+ 148      7474696E 
+ 148      67207374 
+ 148      72696E67 
+ 149              	.LC34:
+GAS LISTING /tmp/cciFaveB.s 			page 9
 
 
- 134              	main:
- 135              	.LFB56:
-  24:src/main.c    **** 
- 136              		.loc 1 24 0
- 137              		.cfi_startproc
- 138 0000 53       		pushq	%rbx
- 139              	.LCFI6:
- 140              		.cfi_def_cfa_offset 16
- 141              		.cfi_offset 3, -16
- 142 0001 4883C480 		addq	$-128, %rsp
- 143              	.LCFI7:
- 144              		.cfi_def_cfa_offset 144
-  24:src/main.c    **** 
- 145              		.loc 1 24 0
- 146 0005 64488B04 		movq	%fs:40, %rax
- 146      25280000 
- 146      00
- 147 000e 48894424 		movq	%rax, 120(%rsp)
- 147      78
- 148 0013 31C0     		xorl	%eax, %eax
-  29:src/main.c    **** 
- 149              		.loc 1 29 0
- 150 0015 488D3D00 		leaq	printf_mcu_msg_str(%rip), %rdi
- 150      000000
- 151 001c E8000000 		call	mcu_msg_string_hnd_create@PLT
- 151      00
- 152              	.LVL7:
- 153 0021 4889D3   		movq	%rdx, %rbx
- 154              	.LVL8:
- 155              	.LBB52:
- 156              	.LBB53:
- 157              		.loc 2 104 0
- 158 0024 488D3D00 		leaq	.LC0(%rip), %rdi
- 158      000000
- 159 002b E8000000 		call	puts@PLT
- 159      00
- 160              	.LVL9:
- 161              	.LBE53:
- 162              	.LBE52:
- 163              	.LBB54:
- 164              	.LBB55:
- 165 0030 488D3D00 		leaq	.LC1(%rip), %rdi
- 165      000000
- 166 0037 E8000000 		call	puts@PLT
- 166      00
- 167              	.LVL10:
- 168              	.LBE55:
- 169              	.LBE54:
- 170              	.LBB56:
- 171              	.LBB57:
- 172 003c 488B1500 		movq	test_str1(%rip), %rdx
- 172      000000
- 173 0043 488D3500 		leaq	.LC2(%rip), %rsi
- 173      000000
- 174 004a BF010000 		movl	$1, %edi
+ 150 015e 45786563 		.string	"Execution time: %f s\n"
+ 150      7574696F 
+ 150      6E207469 
+ 150      6D653A20 
+ 150      25662073 
+ 151              		.section	.text.main,"ax",@progbits
+ 152              		.globl	main
+ 154              	main:
+ 155              	.LFB56:
+  26:src/main.c    ****     /*start the clock*/
+ 156              		.loc 1 26 0
+ 157              		.cfi_startproc
+ 158 0000 55       		pushq	%rbp
+ 159              	.LCFI6:
+ 160              		.cfi_def_cfa_offset 16
+ 161              		.cfi_offset 6, -16
+ 162 0001 53       		pushq	%rbx
+ 163              	.LCFI7:
+ 164              		.cfi_def_cfa_offset 24
+ 165              		.cfi_offset 3, -24
+ 166 0002 4881ECA8 		subq	$168, %rsp
+ 166      000000
+ 167              	.LCFI8:
+ 168              		.cfi_def_cfa_offset 192
+  26:src/main.c    ****     /*start the clock*/
+ 169              		.loc 1 26 0
+ 170 0009 64488B04 		movq	%fs:40, %rax
+ 170      25280000 
+ 170      00
+ 171 0012 48898424 		movq	%rax, 152(%rsp)
+ 171      98000000 
+ 172 001a 31C0     		xorl	%eax, %eax
+  28:src/main.c    ****     clock_t end;
+ 173              		.loc 1 28 0
+ 174 001c E8000000 		call	clock@PLT
  174      00
- 175 004f B8000000 		movl	$0, %eax
-GAS LISTING /tmp/ccccU30j.s 			page 9
+ 175              	.LVL7:
+ 176 0021 4889C3   		movq	%rax, %rbx
+ 177              	.LVL8:
+  34:src/main.c    **** 
+ 178              		.loc 1 34 0
+ 179 0024 488D7C24 		leaq	16(%rsp), %rdi
+ 179      10
+ 180 0029 488D3500 		leaq	printf_mcu_msg_str(%rip), %rsi
+ 180      000000
+ 181 0030 E8000000 		call	mcu_msg_string_hnd_create@PLT
+ 181      00
+ 182              	.LVL9:
+ 183              	.LBB66:
+ 184              	.LBB67:
+ 185              		.loc 2 104 0
+ 186 0035 488D3D00 		leaq	.LC2(%rip), %rdi
+ 186      000000
+ 187 003c E8000000 		call	puts@PLT
+ 187      00
+ 188              	.LVL10:
+ 189              	.LBE67:
+GAS LISTING /tmp/cciFaveB.s 			page 10
 
 
- 175      00
- 176 0054 E8000000 		call	__printf_chk@PLT
- 176      00
- 177              	.LVL11:
- 178              	.LBE57:
- 179              	.LBE56:
- 180              	.LBB58:
- 181              	.LBB59:
- 182 0059 488D3D00 		leaq	.LC3(%rip), %rdi
- 182      000000
- 183 0060 E8000000 		call	puts@PLT
- 183      00
- 184              	.LVL12:
- 185              	.LBE59:
- 186              	.LBE58:
-  37:src/main.c    ****     if(msg.content.s != NULL) {
- 187              		.loc 1 37 0
- 188 0065 488B3500 		movq	test_str1(%rip), %rsi
- 188      000000
- 189 006c 48C7C1FF 		movq	$-1, %rcx
- 189      FFFFFF
- 190 0073 B8000000 		movl	$0, %eax
- 190      00
- 191 0078 4889F7   		movq	%rsi, %rdi
- 192 007b F2AE     		repnz scasb
- 193 007d 48F7D1   		notq	%rcx
- 194 0080 4883E901 		subq	$1, %rcx
- 195 0084 0FB7C9   		movzwl	%cx, %ecx
- 196 0087 488D7C24 		leaq	16(%rsp), %rdi
- 196      10
- 197 008c 488D1500 		leaq	.LC4(%rip), %rdx
- 197      000000
- 198 0093 E8000000 		call	mcu_msg_get@PLT
- 198      00
- 199              	.LVL13:
-  38:src/main.c    ****         printf("msg.id_len: %d msg.content_len: %d\n", msg.id.len, msg.content.len);
- 200              		.loc 1 38 0
- 201 0098 48837C24 		cmpq	$0, 32(%rsp)
- 201      2000
- 202 009e 0F846102 		je	.L6
- 202      0000
-  39:src/main.c    ****         str_hnd.print(msg.id);
- 203              		.loc 1 39 0
- 204 00a4 0FB74C24 		movzwl	40(%rsp), %ecx
- 204      28
- 205 00a9 0FB75424 		movzwl	24(%rsp), %edx
- 205      18
- 206              	.LVL14:
- 207              	.LBB60:
- 208              	.LBB61:
- 209              		.loc 2 104 0
- 210 00ae 488D3500 		leaq	.LC5(%rip), %rsi
+ 190              	.LBE66:
+ 191              	.LBB68:
+ 192              	.LBB69:
+ 193 0041 488D3D00 		leaq	.LC3(%rip), %rdi
+ 193      000000
+ 194 0048 E8000000 		call	puts@PLT
+ 194      00
+ 195              	.LVL11:
+ 196              	.LBE69:
+ 197              	.LBE68:
+ 198              	.LBB70:
+ 199              	.LBB71:
+ 200 004d 488B1500 		movq	test_str1(%rip), %rdx
+ 200      000000
+ 201 0054 488D3500 		leaq	.LC4(%rip), %rsi
+ 201      000000
+ 202 005b BF010000 		movl	$1, %edi
+ 202      00
+ 203 0060 B8000000 		movl	$0, %eax
+ 203      00
+ 204 0065 E8000000 		call	__printf_chk@PLT
+ 204      00
+ 205              	.LVL12:
+ 206              	.LBE71:
+ 207              	.LBE70:
+ 208              	.LBB72:
+ 209              	.LBB73:
+ 210 006a 488D3D00 		leaq	.LC5(%rip), %rdi
  210      000000
- 211 00b5 BF010000 		movl	$1, %edi
+ 211 0071 E8000000 		call	puts@PLT
  211      00
- 212 00ba B8000000 		movl	$0, %eax
- 212      00
-GAS LISTING /tmp/ccccU30j.s 			page 10
-
-
- 213 00bf E8000000 		call	__printf_chk@PLT
- 213      00
- 214              	.LVL15:
- 215              	.LBE61:
- 216              	.LBE60:
-  40:src/main.c    ****         printf(":");
- 217              		.loc 1 40 0
- 218 00c4 488B7C24 		movq	16(%rsp), %rdi
- 218      10
- 219 00c9 488B7424 		movq	24(%rsp), %rsi
- 219      18
- 220 00ce FFD3     		call	*%rbx
- 221              	.LVL16:
- 222              	.LBB62:
- 223              	.LBB63:
- 224              		.loc 2 104 0
- 225 00d0 BF3A0000 		movl	$58, %edi
- 225      00
- 226 00d5 E8000000 		call	putchar@PLT
+ 212              	.LVL13:
+ 213              	.LBE73:
+ 214              	.LBE72:
+  43:src/main.c    ****     if(msg.content.s != NULL) {
+ 215              		.loc 1 43 0
+ 216 0076 488B3500 		movq	test_str1(%rip), %rsi
+ 216      000000
+ 217 007d 48C7C1FF 		movq	$-1, %rcx
+ 217      FFFFFF
+ 218 0084 B8000000 		movl	$0, %eax
+ 218      00
+ 219 0089 4889F7   		movq	%rsi, %rdi
+ 220 008c F2AE     		repnz scasb
+ 221 008e 48F7D1   		notq	%rcx
+ 222 0091 4883E901 		subq	$1, %rcx
+ 223 0095 0FB7C9   		movzwl	%cx, %ecx
+ 224 0098 488D7C24 		leaq	48(%rsp), %rdi
+ 224      30
+ 225 009d 488D1500 		leaq	.LC6(%rip), %rdx
+ 225      000000
+ 226 00a4 E8000000 		call	mcu_msg_get@PLT
  226      00
- 227              	.LVL17:
- 228              	.LBE63:
- 229              	.LBE62:
-  42:src/main.c    ****         printf("\n\n");
- 230              		.loc 1 42 0
- 231 00da 488B7C24 		movq	32(%rsp), %rdi
- 231      20
- 232 00df 488B7424 		movq	40(%rsp), %rsi
- 232      28
- 233 00e4 FFD3     		call	*%rbx
- 234              	.LVL18:
- 235              	.LBB64:
- 236              	.LBB65:
+ 227              	.LVL14:
+  44:src/main.c    ****         printf("msg.id_len: %d msg.content_len: %d\n", msg.id.len, msg.content.len);
+ 228              		.loc 1 44 0
+ 229 00a9 48837C24 		cmpq	$0, 64(%rsp)
+GAS LISTING /tmp/cciFaveB.s 			page 11
+
+
+ 229      4000
+ 230 00af 0F84B003 		je	.L6
+ 230      0000
+  45:src/main.c    ****         str_hnd.print(msg.id);
+ 231              		.loc 1 45 0
+ 232 00b5 0FB74C24 		movzwl	72(%rsp), %ecx
+ 232      48
+ 233 00ba 0FB75424 		movzwl	56(%rsp), %edx
+ 233      38
+ 234              	.LVL15:
+ 235              	.LBB74:
+ 236              	.LBB75:
  237              		.loc 2 104 0
- 238 00e6 488D3D00 		leaq	.LC6(%rip), %rdi
+ 238 00bf 488D3500 		leaq	.LC7(%rip), %rsi
  238      000000
- 239 00ed E8000000 		call	puts@PLT
+ 239 00c6 BF010000 		movl	$1, %edi
  239      00
- 240              	.LVL19:
- 241              	.L7:
- 242              	.LBE65:
- 243              	.LBE64:
- 244              	.LBB66:
- 245              	.LBB67:
- 246 00f2 488D3D00 		leaq	.LC8(%rip), %rdi
- 246      000000
- 247 00f9 E8000000 		call	puts@PLT
- 247      00
- 248              	.LVL20:
- 249              	.LBE67:
- 250              	.LBE66:
-  50:src/main.c    ****     printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
- 251              		.loc 1 50 0
- 252 00fe 488D7C24 		leaq	48(%rsp), %rdi
- 252      30
- 253 0103 FF742428 		pushq	40(%rsp)
- 254              	.LCFI8:
-GAS LISTING /tmp/ccccU30j.s 			page 11
+ 240 00cb B8000000 		movl	$0, %eax
+ 240      00
+ 241 00d0 E8000000 		call	__printf_chk@PLT
+ 241      00
+ 242              	.LVL16:
+ 243              	.LBE75:
+ 244              	.LBE74:
+  46:src/main.c    ****         printf(":");
+ 245              		.loc 1 46 0
+ 246 00d5 488B6C24 		movq	32(%rsp), %rbp
+ 246      20
+ 247 00da 488B7C24 		movq	48(%rsp), %rdi
+ 247      30
+ 248 00df 488B7424 		movq	56(%rsp), %rsi
+ 248      38
+ 249 00e4 FFD5     		call	*%rbp
+ 250              	.LVL17:
+ 251              	.LBB76:
+ 252              	.LBB77:
+ 253              		.loc 2 104 0
+ 254 00e6 BF3A0000 		movl	$58, %edi
+ 254      00
+ 255 00eb E8000000 		call	putchar@PLT
+ 255      00
+ 256              	.LVL18:
+ 257              	.LBE77:
+ 258              	.LBE76:
+  48:src/main.c    ****         printf("\n\n");
+ 259              		.loc 1 48 0
+ 260 00f0 488B7C24 		movq	64(%rsp), %rdi
+ 260      40
+ 261 00f5 488B7424 		movq	72(%rsp), %rsi
+ 261      48
+ 262 00fa FFD5     		call	*%rbp
+ 263              	.LVL19:
+ 264              	.LBB78:
+ 265              	.LBB79:
+ 266              		.loc 2 104 0
+ 267 00fc 488D3D00 		leaq	.LC8(%rip), %rdi
+ 267      000000
+GAS LISTING /tmp/cciFaveB.s 			page 12
 
 
- 255              		.cfi_def_cfa_offset 152
- 256 0107 FF742428 		pushq	40(%rsp)
- 257              	.LCFI9:
- 258              		.cfi_def_cfa_offset 160
- 259 010b FF742428 		pushq	40(%rsp)
- 260              	.LCFI10:
- 261              		.cfi_def_cfa_offset 168
- 262 010f FF742428 		pushq	40(%rsp)
- 263              	.LCFI11:
- 264              		.cfi_def_cfa_offset 176
- 265 0113 488D3500 		leaq	.LC9(%rip), %rsi
- 265      000000
- 266 011a E8000000 		call	mcu_msg_parser_get_obj@PLT
- 266      00
- 267              	.LVL21:
-  51:src/main.c    ****     str_hnd.print(obj1.id); printf(":"); str_hnd.print(obj1.content);
- 268              		.loc 1 51 0
- 269 011f 0FB74C24 		movzwl	104(%rsp), %ecx
- 269      68
- 270 0124 0FB75424 		movzwl	88(%rsp), %edx
- 270      58
- 271              	.LVL22:
- 272              	.LBB68:
- 273              	.LBB69:
- 274              		.loc 2 104 0
- 275 0129 4883C420 		addq	$32, %rsp
- 276              	.LCFI12:
- 277              		.cfi_def_cfa_offset 144
- 278 012d 488D3500 		leaq	.LC10(%rip), %rsi
- 278      000000
- 279 0134 BF010000 		movl	$1, %edi
- 279      00
- 280 0139 B8000000 		movl	$0, %eax
- 280      00
- 281 013e E8000000 		call	__printf_chk@PLT
- 281      00
- 282              	.LVL23:
- 283              	.LBE69:
- 284              	.LBE68:
-  52:src/main.c    ****     printf("\n\n");
- 285              		.loc 1 52 0
- 286 0143 488B7C24 		movq	48(%rsp), %rdi
- 286      30
- 287 0148 488B7424 		movq	56(%rsp), %rsi
- 287      38
- 288 014d FFD3     		call	*%rbx
- 289              	.LVL24:
- 290              	.LBB70:
- 291              	.LBB71:
- 292              		.loc 2 104 0
- 293 014f BF3A0000 		movl	$58, %edi
- 293      00
- 294 0154 E8000000 		call	putchar@PLT
+ 268 0103 E8000000 		call	puts@PLT
+ 268      00
+ 269              	.LVL20:
+ 270              	.L7:
+ 271              	.LBE79:
+ 272              	.LBE78:
+ 273              	.LBB80:
+ 274              	.LBB81:
+ 275 0108 488D3D00 		leaq	.LC10(%rip), %rdi
+ 275      000000
+ 276 010f E8000000 		call	puts@PLT
+ 276      00
+ 277              	.LVL21:
+ 278              	.LBE81:
+ 279              	.LBE80:
+  56:src/main.c    **** 
+ 280              		.loc 1 56 0
+ 281 0114 FF742448 		pushq	72(%rsp)
+ 282              	.LCFI9:
+ 283              		.cfi_def_cfa_offset 200
+ 284 0118 FF742448 		pushq	72(%rsp)
+ 285              	.LCFI10:
+ 286              		.cfi_def_cfa_offset 208
+ 287 011c FF742448 		pushq	72(%rsp)
+ 288              	.LCFI11:
+ 289              		.cfi_def_cfa_offset 216
+ 290 0120 FF742448 		pushq	72(%rsp)
+ 291              	.LCFI12:
+ 292              		.cfi_def_cfa_offset 224
+ 293 0124 488D3D00 		leaq	.LC11(%rip), %rdi
+ 293      000000
+ 294 012b E8000000 		call	mcu_msg_is_cmd_att@PLT
  294      00
- 295              	.LVL25:
- 296              	.LBE71:
- 297              	.LBE70:
-GAS LISTING /tmp/ccccU30j.s 			page 12
+ 295              	.LVL22:
+ 296 0130 4883C420 		addq	$32, %rsp
+ 297              	.LCFI13:
+ 298              		.cfi_def_cfa_offset 192
+ 299 0134 84C0     		testb	%al, %al
+ 300 0136 0F843A03 		je	.L14
+ 300      0000
+ 301 013c 488D1500 		leaq	.LC0(%rip), %rdx
+ 301      000000
+ 302              	.L8:
+ 303              	.LVL23:
+ 304              	.LBB82:
+ 305              	.LBB83:
+ 306              		.loc 2 104 0 discriminator 4
+ 307 0143 488D3500 		leaq	.LC12(%rip), %rsi
+ 307      000000
+ 308 014a BF010000 		movl	$1, %edi
+ 308      00
+ 309 014f B8000000 		movl	$0, %eax
+ 309      00
+ 310 0154 E8000000 		call	__printf_chk@PLT
+ 310      00
+ 311              	.LVL24:
+ 312              	.LBE83:
+GAS LISTING /tmp/cciFaveB.s 			page 13
 
 
-  52:src/main.c    ****     printf("\n\n");
- 298              		.loc 1 52 0
- 299 0159 488B7C24 		movq	64(%rsp), %rdi
- 299      40
- 300 015e 488B7424 		movq	72(%rsp), %rsi
- 300      48
- 301 0163 FFD3     		call	*%rbx
- 302              	.LVL26:
- 303              	.LBB72:
- 304              	.LBB73:
- 305              		.loc 2 104 0
- 306 0165 488D3D00 		leaq	.LC6(%rip), %rdi
- 306      000000
- 307 016c E8000000 		call	puts@PLT
- 307      00
- 308              	.LVL27:
- 309              	.LBE73:
- 310              	.LBE72:
- 311              	.LBB74:
- 312              	.LBB75:
- 313 0171 488D3D00 		leaq	.LC11(%rip), %rdi
- 313      000000
- 314 0178 E8000000 		call	puts@PLT
- 314      00
- 315              	.LVL28:
- 316              	.LBE75:
- 317              	.LBE74:
-  57:src/main.c    ****     printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
- 318              		.loc 1 57 0
- 319 017d 488D7C24 		leaq	80(%rsp), %rdi
- 319      50
- 320 0182 FF742428 		pushq	40(%rsp)
- 321              	.LCFI13:
- 322              		.cfi_def_cfa_offset 152
- 323 0186 FF742428 		pushq	40(%rsp)
- 324              	.LCFI14:
- 325              		.cfi_def_cfa_offset 160
- 326 018a FF742428 		pushq	40(%rsp)
- 327              	.LCFI15:
- 328              		.cfi_def_cfa_offset 168
- 329 018e FF742428 		pushq	40(%rsp)
- 330              	.LCFI16:
- 331              		.cfi_def_cfa_offset 176
- 332 0192 488D3500 		leaq	.LC12(%rip), %rsi
- 332      000000
- 333 0199 E8000000 		call	mcu_msg_parser_get_obj@PLT
- 333      00
- 334              	.LVL29:
-  58:src/main.c    ****     str_hnd.print(obj2.id); printf(":"); str_hnd.print(obj2.content);
- 335              		.loc 1 58 0
- 336 019e 0FB78C24 		movzwl	136(%rsp), %ecx
- 336      88000000 
- 337 01a6 0FB75424 		movzwl	120(%rsp), %edx
- 337      78
- 338              	.LVL30:
- 339              	.LBB76:
- 340              	.LBB77:
-GAS LISTING /tmp/ccccU30j.s 			page 13
+ 313              	.LBE82:
+ 314              	.LBB84:
+ 315              	.LBB85:
+ 316 0159 488D3D00 		leaq	.LC13(%rip), %rdi
+ 316      000000
+ 317 0160 E8000000 		call	puts@PLT
+ 317      00
+ 318              	.LVL25:
+ 319              	.LBE85:
+ 320              	.LBE84:
+  59:src/main.c    **** 
+ 321              		.loc 1 59 0 discriminator 4
+ 322 0165 FF742448 		pushq	72(%rsp)
+ 323              	.LCFI14:
+ 324              		.cfi_def_cfa_offset 200
+ 325 0169 FF742448 		pushq	72(%rsp)
+ 326              	.LCFI15:
+ 327              		.cfi_def_cfa_offset 208
+ 328 016d FF742448 		pushq	72(%rsp)
+ 329              	.LCFI16:
+ 330              		.cfi_def_cfa_offset 216
+ 331 0171 FF742448 		pushq	72(%rsp)
+ 332              	.LCFI17:
+ 333              		.cfi_def_cfa_offset 224
+ 334 0175 488D3D00 		leaq	.LC14(%rip), %rdi
+ 334      000000
+ 335 017c E8000000 		call	mcu_msg_is_cmd_att@PLT
+ 335      00
+ 336              	.LVL26:
+ 337 0181 4883C420 		addq	$32, %rsp
+ 338              	.LCFI18:
+ 339              		.cfi_def_cfa_offset 192
+ 340 0185 84C0     		testb	%al, %al
+ 341 0187 0F84F502 		je	.L15
+ 341      0000
+  59:src/main.c    **** 
+ 342              		.loc 1 59 0 is_stmt 0
+ 343 018d 488D1500 		leaq	.LC0(%rip), %rdx
+ 343      000000
+ 344              	.L9:
+ 345              	.LVL27:
+ 346              	.LBB86:
+ 347              	.LBB87:
+ 348              		.loc 2 104 0 is_stmt 1 discriminator 4
+ 349 0194 488D3500 		leaq	.LC12(%rip), %rsi
+ 349      000000
+ 350 019b BF010000 		movl	$1, %edi
+ 350      00
+ 351 01a0 B8000000 		movl	$0, %eax
+ 351      00
+ 352 01a5 E8000000 		call	__printf_chk@PLT
+ 352      00
+ 353              	.LVL28:
+ 354              	.LBE87:
+ 355              	.LBE86:
+ 356              	.LBB88:
+ 357              	.LBB89:
+GAS LISTING /tmp/cciFaveB.s 			page 14
 
 
- 341              		.loc 2 104 0
- 342 01ab 4883C420 		addq	$32, %rsp
- 343              	.LCFI17:
- 344              		.cfi_def_cfa_offset 144
- 345 01af 488D3500 		leaq	.LC13(%rip), %rsi
- 345      000000
- 346 01b6 BF010000 		movl	$1, %edi
- 346      00
- 347 01bb B8000000 		movl	$0, %eax
- 347      00
- 348 01c0 E8000000 		call	__printf_chk@PLT
- 348      00
- 349              	.LVL31:
- 350              	.LBE77:
- 351              	.LBE76:
-  59:src/main.c    ****     printf("\n\n");
- 352              		.loc 1 59 0
- 353 01c5 488B7C24 		movq	80(%rsp), %rdi
- 353      50
- 354 01ca 488B7424 		movq	88(%rsp), %rsi
- 354      58
- 355 01cf FFD3     		call	*%rbx
- 356              	.LVL32:
- 357              	.LBB78:
- 358              	.LBB79:
- 359              		.loc 2 104 0
- 360 01d1 BF3A0000 		movl	$58, %edi
- 360      00
- 361 01d6 E8000000 		call	putchar@PLT
- 361      00
- 362              	.LVL33:
- 363              	.LBE79:
- 364              	.LBE78:
-  59:src/main.c    ****     printf("\n\n");
- 365              		.loc 1 59 0
- 366 01db 488B7C24 		movq	96(%rsp), %rdi
- 366      60
- 367 01e0 488B7424 		movq	104(%rsp), %rsi
- 367      68
- 368 01e5 FFD3     		call	*%rbx
- 369              	.LVL34:
- 370              	.LBB80:
- 371              	.LBB81:
- 372              		.loc 2 104 0
- 373 01e7 488D3D00 		leaq	.LC6(%rip), %rdi
- 373      000000
- 374 01ee E8000000 		call	puts@PLT
- 374      00
- 375              	.LVL35:
- 376              	.LBE81:
- 377              	.LBE80:
- 378              	.LBB82:
- 379              	.LBB83:
- 380 01f3 488D3D00 		leaq	.LC14(%rip), %rdi
- 380      000000
- 381 01fa E8000000 		call	puts@PLT
- 381      00
-GAS LISTING /tmp/ccccU30j.s 			page 14
+ 358 01aa 488D3D00 		leaq	.LC15(%rip), %rdi
+ 358      000000
+ 359 01b1 E8000000 		call	puts@PLT
+ 359      00
+ 360              	.LVL29:
+ 361              	.LBE89:
+ 362              	.LBE88:
+  62:src/main.c    **** 
+ 363              		.loc 1 62 0 discriminator 4
+ 364 01b6 FF742448 		pushq	72(%rsp)
+ 365              	.LCFI19:
+ 366              		.cfi_def_cfa_offset 200
+ 367 01ba FF742448 		pushq	72(%rsp)
+ 368              	.LCFI20:
+ 369              		.cfi_def_cfa_offset 208
+ 370 01be FF742448 		pushq	72(%rsp)
+ 371              	.LCFI21:
+ 372              		.cfi_def_cfa_offset 216
+ 373 01c2 FF742448 		pushq	72(%rsp)
+ 374              	.LCFI22:
+ 375              		.cfi_def_cfa_offset 224
+ 376 01c6 488D3D00 		leaq	.LC16(%rip), %rdi
+ 376      000000
+ 377 01cd E8000000 		call	mcu_msg_is_cmd_att@PLT
+ 377      00
+ 378              	.LVL30:
+ 379 01d2 4883C420 		addq	$32, %rsp
+ 380              	.LCFI23:
+ 381              		.cfi_def_cfa_offset 192
+ 382 01d6 84C0     		testb	%al, %al
+ 383 01d8 0F84B002 		je	.L16
+ 383      0000
+  62:src/main.c    **** 
+ 384              		.loc 1 62 0 is_stmt 0
+ 385 01de 488D1500 		leaq	.LC0(%rip), %rdx
+ 385      000000
+ 386              	.L10:
+ 387              	.LVL31:
+ 388              	.LBB90:
+ 389              	.LBB91:
+ 390              		.loc 2 104 0 is_stmt 1 discriminator 4
+ 391 01e5 488D3500 		leaq	.LC12(%rip), %rsi
+ 391      000000
+ 392 01ec BF010000 		movl	$1, %edi
+ 392      00
+ 393 01f1 B8000000 		movl	$0, %eax
+ 393      00
+ 394 01f6 E8000000 		call	__printf_chk@PLT
+ 394      00
+ 395              	.LVL32:
+ 396              	.LBE91:
+ 397              	.LBE90:
+ 398              	.LBB92:
+ 399              	.LBB93:
+ 400 01fb 488D3D00 		leaq	.LC17(%rip), %rdi
+ 400      000000
+ 401 0202 E8000000 		call	puts@PLT
+GAS LISTING /tmp/cciFaveB.s 			page 15
 
 
- 382              	.LVL36:
- 383              	.LBE83:
- 384              	.LBE82:
-  64:src/main.c    ****     float fval = 0.0;
- 385              		.loc 1 64 0
- 386 01ff C7442408 		movl	$0, 8(%rsp)
- 386      00000000 
-  65:src/main.c    ****     res = mcu_msg_parser_get_int(&ival, obj1, "key11");
- 387              		.loc 1 65 0
- 388 0207 C744240C 		movl	$0x00000000, 12(%rsp)
- 388      00000000 
-  66:src/main.c    ****     printf("r = %d ival = %d\n\n", res, ival);
- 389              		.loc 1 66 0
- 390 020f 488D7C24 		leaq	8(%rsp), %rdi
- 390      08
- 391 0214 FF742448 		pushq	72(%rsp)
- 392              	.LCFI18:
- 393              		.cfi_def_cfa_offset 152
- 394 0218 FF742448 		pushq	72(%rsp)
- 395              	.LCFI19:
- 396              		.cfi_def_cfa_offset 160
- 397 021c FF742448 		pushq	72(%rsp)
- 398              	.LCFI20:
- 399              		.cfi_def_cfa_offset 168
- 400 0220 FF742448 		pushq	72(%rsp)
- 401              	.LCFI21:
- 402              		.cfi_def_cfa_offset 176
- 403 0224 488D3500 		leaq	.LC16(%rip), %rsi
- 403      000000
- 404 022b E8000000 		call	mcu_msg_parser_get_int@PLT
- 404      00
- 405              	.LVL37:
- 406 0230 0FBED0   		movsbl	%al, %edx
- 407              	.LVL38:
- 408              	.LBB84:
- 409              	.LBB85:
- 410              		.loc 2 104 0
- 411 0233 4883C420 		addq	$32, %rsp
- 412              	.LCFI22:
- 413              		.cfi_def_cfa_offset 144
- 414 0237 8B4C2408 		movl	8(%rsp), %ecx
- 415 023b 488D3500 		leaq	.LC17(%rip), %rsi
- 415      000000
- 416 0242 BF010000 		movl	$1, %edi
- 416      00
- 417 0247 B8000000 		movl	$0, %eax
- 417      00
- 418 024c E8000000 		call	__printf_chk@PLT
- 418      00
- 419              	.LVL39:
- 420              	.LBE85:
- 421              	.LBE84:
- 422              	.LBB86:
- 423              	.LBB87:
- 424 0251 488D3D00 		leaq	.LC18(%rip), %rdi
- 424      000000
- 425 0258 E8000000 		call	puts@PLT
-GAS LISTING /tmp/ccccU30j.s 			page 15
+ 401      00
+ 402              	.LVL33:
+ 403              	.LBE93:
+ 404              	.LBE92:
+  66:src/main.c    ****     printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
+ 405              		.loc 1 66 0 discriminator 4
+ 406 0207 488D7C24 		leaq	80(%rsp), %rdi
+ 406      50
+ 407 020c FF742448 		pushq	72(%rsp)
+ 408              	.LCFI24:
+ 409              		.cfi_def_cfa_offset 200
+ 410 0210 FF742448 		pushq	72(%rsp)
+ 411              	.LCFI25:
+ 412              		.cfi_def_cfa_offset 208
+ 413 0214 FF742448 		pushq	72(%rsp)
+ 414              	.LCFI26:
+ 415              		.cfi_def_cfa_offset 216
+ 416 0218 FF742448 		pushq	72(%rsp)
+ 417              	.LCFI27:
+ 418              		.cfi_def_cfa_offset 224
+ 419 021c 488D3500 		leaq	.LC18(%rip), %rsi
+ 419      000000
+ 420 0223 E8000000 		call	mcu_msg_parser_get_obj@PLT
+ 420      00
+ 421              	.LVL34:
+  67:src/main.c    ****     str_hnd.print(obj1.id); printf(":"); str_hnd.print(obj1.content);
+ 422              		.loc 1 67 0 discriminator 4
+ 423 0228 0FB78C24 		movzwl	136(%rsp), %ecx
+ 423      88000000 
+ 424 0230 0FB75424 		movzwl	120(%rsp), %edx
+ 424      78
+ 425              	.LVL35:
+ 426              	.LBB94:
+ 427              	.LBB95:
+ 428              		.loc 2 104 0 discriminator 4
+ 429 0235 4883C420 		addq	$32, %rsp
+ 430              	.LCFI28:
+ 431              		.cfi_def_cfa_offset 192
+ 432 0239 488D3500 		leaq	.LC19(%rip), %rsi
+ 432      000000
+ 433 0240 BF010000 		movl	$1, %edi
+ 433      00
+ 434 0245 B8000000 		movl	$0, %eax
+ 434      00
+ 435 024a E8000000 		call	__printf_chk@PLT
+ 435      00
+ 436              	.LVL36:
+ 437              	.LBE95:
+ 438              	.LBE94:
+  68:src/main.c    ****     printf("\n\n");
+ 439              		.loc 1 68 0 discriminator 4
+ 440 024f 488B6C24 		movq	32(%rsp), %rbp
+ 440      20
+ 441 0254 488B7C24 		movq	80(%rsp), %rdi
+ 441      50
+ 442 0259 488B7424 		movq	88(%rsp), %rsi
+ 442      58
+GAS LISTING /tmp/cciFaveB.s 			page 16
 
 
- 425      00
- 426              	.LVL40:
- 427              	.LBE87:
- 428              	.LBE86:
-  71:src/main.c    ****     printf("r = %d fval = %.11f\n\n", res, fval);
- 429              		.loc 1 71 0
- 430 025d 488D7C24 		leaq	12(%rsp), %rdi
- 430      0C
- 431 0262 FF742468 		pushq	104(%rsp)
- 432              	.LCFI23:
- 433              		.cfi_def_cfa_offset 152
- 434 0266 FF742468 		pushq	104(%rsp)
- 435              	.LCFI24:
- 436              		.cfi_def_cfa_offset 160
- 437 026a FF742468 		pushq	104(%rsp)
- 438              	.LCFI25:
- 439              		.cfi_def_cfa_offset 168
- 440 026e FF742468 		pushq	104(%rsp)
- 441              	.LCFI26:
- 442              		.cfi_def_cfa_offset 176
- 443 0272 488D3500 		leaq	.LC19(%rip), %rsi
- 443      000000
- 444 0279 E8000000 		call	mcu_msg_parser_get_float@PLT
- 444      00
- 445              	.LVL41:
- 446 027e 0FBED0   		movsbl	%al, %edx
- 447              	.LVL42:
-  72:src/main.c    **** 
- 448              		.loc 1 72 0
- 449 0281 660FEFC0 		pxor	%xmm0, %xmm0
- 450 0285 F30F5A44 		cvtss2sd	44(%rsp), %xmm0
- 450      242C
- 451              	.LVL43:
- 452              	.LBB88:
- 453              	.LBB89:
- 454              		.loc 2 104 0
- 455 028b 4883C420 		addq	$32, %rsp
- 456              	.LCFI27:
- 457              		.cfi_def_cfa_offset 144
- 458 028f 488D3500 		leaq	.LC20(%rip), %rsi
- 458      000000
- 459 0296 BF010000 		movl	$1, %edi
- 459      00
- 460 029b B8010000 		movl	$1, %eax
- 460      00
- 461 02a0 E8000000 		call	__printf_chk@PLT
- 461      00
- 462              	.LVL44:
- 463              	.LBE89:
- 464              	.LBE88:
- 465              	.LBB90:
- 466              	.LBB91:
- 467 02a5 488D3D00 		leaq	.LC21(%rip), %rdi
- 467      000000
- 468 02ac E8000000 		call	puts@PLT
- 468      00
- 469              	.LVL45:
-GAS LISTING /tmp/ccccU30j.s 			page 16
+ 443 025e FFD5     		call	*%rbp
+ 444              	.LVL37:
+ 445              	.LBB96:
+ 446              	.LBB97:
+ 447              		.loc 2 104 0 discriminator 4
+ 448 0260 BF3A0000 		movl	$58, %edi
+ 448      00
+ 449 0265 E8000000 		call	putchar@PLT
+ 449      00
+ 450              	.LVL38:
+ 451              	.LBE97:
+ 452              	.LBE96:
+  68:src/main.c    ****     printf("\n\n");
+ 453              		.loc 1 68 0 discriminator 4
+ 454 026a 488B7C24 		movq	96(%rsp), %rdi
+ 454      60
+ 455 026f 488B7424 		movq	104(%rsp), %rsi
+ 455      68
+ 456 0274 FFD5     		call	*%rbp
+ 457              	.LVL39:
+ 458              	.LBB98:
+ 459              	.LBB99:
+ 460              		.loc 2 104 0 discriminator 4
+ 461 0276 488D3D00 		leaq	.LC8(%rip), %rdi
+ 461      000000
+ 462 027d E8000000 		call	puts@PLT
+ 462      00
+ 463              	.LVL40:
+ 464              	.LBE99:
+ 465              	.LBE98:
+ 466              	.LBB100:
+ 467              	.LBB101:
+ 468 0282 488D3D00 		leaq	.LC20(%rip), %rdi
+ 468      000000
+ 469 0289 E8000000 		call	puts@PLT
+ 469      00
+ 470              	.LVL41:
+ 471              	.LBE101:
+ 472              	.LBE100:
+  73:src/main.c    ****     printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
+ 473              		.loc 1 73 0 discriminator 4
+ 474 028e 488D7C24 		leaq	112(%rsp), %rdi
+ 474      70
+ 475 0293 FF742448 		pushq	72(%rsp)
+ 476              	.LCFI29:
+ 477              		.cfi_def_cfa_offset 200
+ 478 0297 FF742448 		pushq	72(%rsp)
+ 479              	.LCFI30:
+ 480              		.cfi_def_cfa_offset 208
+ 481 029b FF742448 		pushq	72(%rsp)
+ 482              	.LCFI31:
+ 483              		.cfi_def_cfa_offset 216
+ 484 029f FF742448 		pushq	72(%rsp)
+ 485              	.LCFI32:
+ 486              		.cfi_def_cfa_offset 224
+ 487 02a3 488D3500 		leaq	.LC21(%rip), %rsi
+ 487      000000
+GAS LISTING /tmp/cciFaveB.s 			page 17
 
 
- 470              	.LBE91:
- 471              	.LBE90:
-  76:src/main.c    ****     if(str.s != NULL) {
- 472              		.loc 1 76 0
- 473 02b1 FF742448 		pushq	72(%rsp)
- 474              	.LCFI28:
- 475              		.cfi_def_cfa_offset 152
- 476 02b5 FF742448 		pushq	72(%rsp)
- 477              	.LCFI29:
- 478              		.cfi_def_cfa_offset 160
- 479 02b9 FF742448 		pushq	72(%rsp)
- 480              	.LCFI30:
- 481              		.cfi_def_cfa_offset 168
- 482 02bd FF742448 		pushq	72(%rsp)
- 483              	.LCFI31:
- 484              		.cfi_def_cfa_offset 176
- 485 02c1 488D3D00 		leaq	.LC22(%rip), %rdi
- 485      000000
- 486 02c8 E8000000 		call	mcu_msg_parser_get_string@PLT
- 486      00
- 487              	.LVL46:
-  77:src/main.c    ****         str_hnd.print(str); printf("\n\n");
- 488              		.loc 1 77 0
- 489 02cd 4883C420 		addq	$32, %rsp
- 490              	.LCFI32:
- 491              		.cfi_def_cfa_offset 144
- 492              	.LVL47:
- 493 02d1 4885C0   		testq	%rax, %rax
- 494 02d4 7440     		je	.L8
-  78:src/main.c    ****     } else {
- 495              		.loc 1 78 0
- 496 02d6 4889C7   		movq	%rax, %rdi
- 497              	.LVL48:
- 498 02d9 4889D6   		movq	%rdx, %rsi
- 499 02dc FFD3     		call	*%rbx
- 500              	.LVL49:
- 501              	.LBB92:
- 502              	.LBB93:
- 503              		.loc 2 104 0
- 504 02de 488D3D00 		leaq	.LC6(%rip), %rdi
- 504      000000
- 505 02e5 E8000000 		call	puts@PLT
- 505      00
- 506              	.LVL50:
- 507              	.L9:
- 508              	.LBE93:
- 509              	.LBE92:
-  84:src/main.c    **** 
- 510              		.loc 1 84 0
- 511 02ea B8000000 		movl	$0, %eax
- 511      00
- 512 02ef 488B5C24 		movq	120(%rsp), %rbx
- 512      78
- 513 02f4 6448331C 		xorq	%fs:40, %rbx
- 513      25280000 
- 513      00
- 514 02fd 7525     		jne	.L12
-GAS LISTING /tmp/ccccU30j.s 			page 17
+ 488 02aa E8000000 		call	mcu_msg_parser_get_obj@PLT
+ 488      00
+ 489              	.LVL42:
+  74:src/main.c    ****     str_hnd.print(obj2.id); printf(":"); str_hnd.print(obj2.content);
+ 490              		.loc 1 74 0 discriminator 4
+ 491 02af 0FB78C24 		movzwl	168(%rsp), %ecx
+ 491      A8000000 
+ 492 02b7 0FB79424 		movzwl	152(%rsp), %edx
+ 492      98000000 
+ 493              	.LVL43:
+ 494              	.LBB102:
+ 495              	.LBB103:
+ 496              		.loc 2 104 0 discriminator 4
+ 497 02bf 4883C420 		addq	$32, %rsp
+ 498              	.LCFI33:
+ 499              		.cfi_def_cfa_offset 192
+ 500 02c3 488D3500 		leaq	.LC22(%rip), %rsi
+ 500      000000
+ 501 02ca BF010000 		movl	$1, %edi
+ 501      00
+ 502 02cf B8000000 		movl	$0, %eax
+ 502      00
+ 503 02d4 E8000000 		call	__printf_chk@PLT
+ 503      00
+ 504              	.LVL44:
+ 505              	.LBE103:
+ 506              	.LBE102:
+  75:src/main.c    ****     printf("\n\n");
+ 507              		.loc 1 75 0 discriminator 4
+ 508 02d9 488B7C24 		movq	112(%rsp), %rdi
+ 508      70
+ 509 02de 488B7424 		movq	120(%rsp), %rsi
+ 509      78
+ 510 02e3 FFD5     		call	*%rbp
+ 511              	.LVL45:
+ 512              	.LBB104:
+ 513              	.LBB105:
+ 514              		.loc 2 104 0 discriminator 4
+ 515 02e5 BF3A0000 		movl	$58, %edi
+ 515      00
+ 516 02ea E8000000 		call	putchar@PLT
+ 516      00
+ 517              	.LVL46:
+ 518              	.LBE105:
+ 519              	.LBE104:
+  75:src/main.c    ****     printf("\n\n");
+ 520              		.loc 1 75 0 discriminator 4
+ 521 02ef 488BBC24 		movq	128(%rsp), %rdi
+ 521      80000000 
+ 522 02f7 488BB424 		movq	136(%rsp), %rsi
+ 522      88000000 
+ 523 02ff FFD5     		call	*%rbp
+ 524              	.LVL47:
+ 525              	.LBB106:
+ 526              	.LBB107:
+ 527              		.loc 2 104 0 discriminator 4
+ 528 0301 488D3D00 		leaq	.LC8(%rip), %rdi
+GAS LISTING /tmp/cciFaveB.s 			page 18
 
 
- 515 02ff 4883EC80 		subq	$-128, %rsp
- 516              	.LCFI33:
- 517              		.cfi_remember_state
- 518              		.cfi_def_cfa_offset 16
- 519 0303 5B       		popq	%rbx
- 520              	.LCFI34:
- 521              		.cfi_def_cfa_offset 8
- 522 0304 C3       		ret
- 523              	.L6:
- 524              	.LCFI35:
- 525              		.cfi_restore_state
- 526              	.LVL51:
- 527              	.LBB94:
- 528              	.LBB95:
- 529              		.loc 2 104 0
- 530 0305 488D3D00 		leaq	.LC7(%rip), %rdi
- 530      000000
- 531 030c E8000000 		call	puts@PLT
- 531      00
- 532              	.LVL52:
- 533 0311 E9DCFDFF 		jmp	.L7
- 533      FF
- 534              	.LVL53:
- 535              	.L8:
- 536              	.LBE95:
- 537              	.LBE94:
- 538              	.LBB96:
- 539              	.LBB97:
- 540 0316 488D3D00 		leaq	.LC23(%rip), %rdi
- 540      000000
- 541 031d E8000000 		call	puts@PLT
- 541      00
- 542              	.LVL54:
- 543 0322 EBC6     		jmp	.L9
- 544              	.LVL55:
- 545              	.L12:
- 546              	.LBE97:
- 547              	.LBE96:
-  84:src/main.c    **** 
- 548              		.loc 1 84 0
- 549 0324 E8000000 		call	__stack_chk_fail@PLT
- 549      00
- 550              	.LVL56:
- 551              		.cfi_endproc
- 552              	.LFE56:
- 554              		.globl	test_str1
- 555              		.section	.rodata.str1.8,"aMS",@progbits,1
- 556              		.align 8
- 557              	.LC24:
- 558 0000 23746573 		.string	"#test_msg {!CMD1 @obj1($key11 =   -1123334567  ; $key12 = 'string \"value\"') @obj2  ($ke
- 558      745F6D73 
- 558      67207B21 
- 558      434D4431 
- 558      20406F62 
- 559              		.section	.data.rel.local.test_str1,"aw",@progbits
- 560              		.align 8
- 563              	test_str1:
-GAS LISTING /tmp/ccccU30j.s 			page 18
+ 528      000000
+ 529 0308 E8000000 		call	puts@PLT
+ 529      00
+ 530              	.LVL48:
+ 531              	.LBE107:
+ 532              	.LBE106:
+ 533              	.LBB108:
+ 534              	.LBB109:
+ 535 030d 488D3D00 		leaq	.LC23(%rip), %rdi
+ 535      000000
+ 536 0314 E8000000 		call	puts@PLT
+ 536      00
+ 537              	.LVL49:
+ 538              	.LBE109:
+ 539              	.LBE108:
+  80:src/main.c    ****     float fval = 0.0;
+ 540              		.loc 1 80 0 discriminator 4
+ 541 0319 C7442408 		movl	$0, 8(%rsp)
+ 541      00000000 
+  81:src/main.c    ****     res = mcu_msg_parser_get_int(&ival, obj1, "key11");
+ 542              		.loc 1 81 0 discriminator 4
+ 543 0321 C744240C 		movl	$0x00000000, 12(%rsp)
+ 543      00000000 
+  82:src/main.c    ****     printf("r = %d ival = %d\n\n", res, ival);
+ 544              		.loc 1 82 0 discriminator 4
+ 545 0329 488D7C24 		leaq	8(%rsp), %rdi
+ 545      08
+ 546 032e FF742468 		pushq	104(%rsp)
+ 547              	.LCFI34:
+ 548              		.cfi_def_cfa_offset 200
+ 549 0332 FF742468 		pushq	104(%rsp)
+ 550              	.LCFI35:
+ 551              		.cfi_def_cfa_offset 208
+ 552 0336 FF742468 		pushq	104(%rsp)
+ 553              	.LCFI36:
+ 554              		.cfi_def_cfa_offset 216
+ 555 033a FF742468 		pushq	104(%rsp)
+ 556              	.LCFI37:
+ 557              		.cfi_def_cfa_offset 224
+ 558 033e 488D3500 		leaq	.LC25(%rip), %rsi
+ 558      000000
+ 559 0345 E8000000 		call	mcu_msg_parser_get_int@PLT
+ 559      00
+ 560              	.LVL50:
+ 561 034a 0FBED0   		movsbl	%al, %edx
+ 562              	.LVL51:
+ 563              	.LBB110:
+ 564              	.LBB111:
+ 565              		.loc 2 104 0 discriminator 4
+ 566 034d 4883C420 		addq	$32, %rsp
+ 567              	.LCFI38:
+ 568              		.cfi_def_cfa_offset 192
+ 569 0351 8B4C2408 		movl	8(%rsp), %ecx
+ 570 0355 488D3500 		leaq	.LC26(%rip), %rsi
+ 570      000000
+ 571 035c BF010000 		movl	$1, %edi
+ 571      00
+GAS LISTING /tmp/cciFaveB.s 			page 19
 
 
- 564 0000 00000000 		.quad	.LC24
- 564      00000000 
- 565              		.text
- 566              	.Letext0:
- 567              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h"
- 568              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 569              		.file 5 "/usr/include/x86_64-linux-gnu/bits/libio.h"
- 570              		.file 6 "/usr/include/stdio.h"
- 571              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
- 572              		.file 8 "/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h"
- 573              		.file 9 "inc/mcu_msg_parser.h"
- 574              		.file 10 "<built-in>"
-GAS LISTING /tmp/ccccU30j.s 			page 19
+ 572 0361 B8000000 		movl	$0, %eax
+ 572      00
+ 573 0366 E8000000 		call	__printf_chk@PLT
+ 573      00
+ 574              	.LVL52:
+ 575              	.LBE111:
+ 576              	.LBE110:
+ 577              	.LBB112:
+ 578              	.LBB113:
+ 579 036b 488D3D00 		leaq	.LC27(%rip), %rdi
+ 579      000000
+ 580 0372 E8000000 		call	puts@PLT
+ 580      00
+ 581              	.LVL53:
+ 582              	.LBE113:
+ 583              	.LBE112:
+  87:src/main.c    ****     printf("r = %d fval = %.11f\n\n", res, fval);
+ 584              		.loc 1 87 0 discriminator 4
+ 585 0377 488D7C24 		leaq	12(%rsp), %rdi
+ 585      0C
+ 586 037c FFB42488 		pushq	136(%rsp)
+ 586      000000
+ 587              	.LCFI39:
+ 588              		.cfi_def_cfa_offset 200
+ 589 0383 FFB42488 		pushq	136(%rsp)
+ 589      000000
+ 590              	.LCFI40:
+ 591              		.cfi_def_cfa_offset 208
+ 592 038a FFB42488 		pushq	136(%rsp)
+ 592      000000
+ 593              	.LCFI41:
+ 594              		.cfi_def_cfa_offset 216
+ 595 0391 FFB42488 		pushq	136(%rsp)
+ 595      000000
+ 596              	.LCFI42:
+ 597              		.cfi_def_cfa_offset 224
+ 598 0398 488D3500 		leaq	.LC28(%rip), %rsi
+ 598      000000
+ 599 039f E8000000 		call	mcu_msg_parser_get_float@PLT
+ 599      00
+ 600              	.LVL54:
+ 601 03a4 0FBED0   		movsbl	%al, %edx
+ 602              	.LVL55:
+  88:src/main.c    **** 
+ 603              		.loc 1 88 0 discriminator 4
+ 604 03a7 660FEFC0 		pxor	%xmm0, %xmm0
+ 605 03ab F30F5A44 		cvtss2sd	44(%rsp), %xmm0
+ 605      242C
+ 606              	.LVL56:
+ 607              	.LBB114:
+ 608              	.LBB115:
+ 609              		.loc 2 104 0 discriminator 4
+ 610 03b1 4883C420 		addq	$32, %rsp
+ 611              	.LCFI43:
+ 612              		.cfi_def_cfa_offset 192
+ 613 03b5 488D3500 		leaq	.LC29(%rip), %rsi
+ 613      000000
+GAS LISTING /tmp/cciFaveB.s 			page 20
+
+
+ 614 03bc BF010000 		movl	$1, %edi
+ 614      00
+ 615 03c1 B8010000 		movl	$1, %eax
+ 615      00
+ 616 03c6 E8000000 		call	__printf_chk@PLT
+ 616      00
+ 617              	.LVL57:
+ 618              	.LBE115:
+ 619              	.LBE114:
+ 620              	.LBB116:
+ 621              	.LBB117:
+ 622 03cb 488D3D00 		leaq	.LC30(%rip), %rdi
+ 622      000000
+ 623 03d2 E8000000 		call	puts@PLT
+ 623      00
+ 624              	.LVL58:
+ 625              	.LBE117:
+ 626              	.LBE116:
+  92:src/main.c    ****     if(str.s != NULL) {
+ 627              		.loc 1 92 0 discriminator 4
+ 628 03d7 FF742468 		pushq	104(%rsp)
+ 629              	.LCFI44:
+ 630              		.cfi_def_cfa_offset 200
+ 631 03db FF742468 		pushq	104(%rsp)
+ 632              	.LCFI45:
+ 633              		.cfi_def_cfa_offset 208
+ 634 03df FF742468 		pushq	104(%rsp)
+ 635              	.LCFI46:
+ 636              		.cfi_def_cfa_offset 216
+ 637 03e3 FF742468 		pushq	104(%rsp)
+ 638              	.LCFI47:
+ 639              		.cfi_def_cfa_offset 224
+ 640 03e7 488D3D00 		leaq	.LC31(%rip), %rdi
+ 640      000000
+ 641 03ee E8000000 		call	mcu_msg_parser_get_string@PLT
+ 641      00
+ 642              	.LVL59:
+  93:src/main.c    ****         str_hnd.print(str); printf("\n\n");
+ 643              		.loc 1 93 0 discriminator 4
+ 644 03f3 4883C420 		addq	$32, %rsp
+ 645              	.LCFI48:
+ 646              		.cfi_def_cfa_offset 192
+ 647              	.LVL60:
+ 648 03f7 4885C0   		testq	%rax, %rax
+ 649 03fa 0F849A00 		je	.L11
+ 649      0000
+  94:src/main.c    ****     } else {
+ 650              		.loc 1 94 0
+ 651 0400 4889C7   		movq	%rax, %rdi
+ 652              	.LVL61:
+ 653 0403 4889D6   		movq	%rdx, %rsi
+ 654 0406 FFD5     		call	*%rbp
+ 655              	.LVL62:
+ 656              	.LBB118:
+ 657              	.LBB119:
+ 658              		.loc 2 104 0
+ 659 0408 488D3D00 		leaq	.LC8(%rip), %rdi
+GAS LISTING /tmp/cciFaveB.s 			page 21
+
+
+ 659      000000
+ 660 040f E8000000 		call	puts@PLT
+ 660      00
+ 661              	.LVL63:
+ 662              	.L12:
+ 663              	.LBE119:
+ 664              	.LBE118:
+  99:src/main.c    **** 
+ 665              		.loc 1 99 0
+ 666 0414 E8000000 		call	clock@PLT
+ 666      00
+ 667              	.LVL64:
+ 101:src/main.c    **** 
+ 668              		.loc 1 101 0
+ 669 0419 4829D8   		subq	%rbx, %rax
+ 670              	.LVL65:
+ 671 041c 660FEFC0 		pxor	%xmm0, %xmm0
+ 672 0420 F2480F2A 		cvtsi2sdq	%rax, %xmm0
+ 672      C0
+ 673 0425 F20F5E05 		divsd	.LC33(%rip), %xmm0
+ 673      00000000 
+ 674              	.LVL66:
+ 675              	.LBB120:
+ 676              	.LBB121:
+ 677              		.loc 2 104 0
+ 678 042d 488D3500 		leaq	.LC34(%rip), %rsi
+ 678      000000
+ 679 0434 BF010000 		movl	$1, %edi
+ 679      00
+ 680 0439 B8010000 		movl	$1, %eax
+ 680      00
+ 681 043e E8000000 		call	__printf_chk@PLT
+ 681      00
+ 682              	.LVL67:
+ 683              	.LBE121:
+ 684              	.LBE120:
+ 105:src/main.c    **** 
+ 685              		.loc 1 105 0
+ 686 0443 B8000000 		movl	$0, %eax
+ 686      00
+ 687 0448 488B9C24 		movq	152(%rsp), %rbx
+ 687      98000000 
+ 688 0450 6448331C 		xorq	%fs:40, %rbx
+ 688      25280000 
+ 688      00
+ 689              	.LVL68:
+ 690 0459 7550     		jne	.L18
+ 691 045b 4881C4A8 		addq	$168, %rsp
+ 691      000000
+ 692              	.LCFI49:
+ 693              		.cfi_remember_state
+ 694              		.cfi_def_cfa_offset 24
+ 695 0462 5B       		popq	%rbx
+ 696              	.LCFI50:
+ 697              		.cfi_def_cfa_offset 16
+ 698 0463 5D       		popq	%rbp
+ 699              	.LCFI51:
+GAS LISTING /tmp/cciFaveB.s 			page 22
+
+
+ 700              		.cfi_def_cfa_offset 8
+ 701 0464 C3       		ret
+ 702              	.LVL69:
+ 703              	.L6:
+ 704              	.LCFI52:
+ 705              		.cfi_restore_state
+ 706              	.LBB122:
+ 707              	.LBB123:
+ 708              		.loc 2 104 0
+ 709 0465 488D3D00 		leaq	.LC9(%rip), %rdi
+ 709      000000
+ 710 046c E8000000 		call	puts@PLT
+ 710      00
+ 711              	.LVL70:
+ 712 0471 E992FCFF 		jmp	.L7
+ 712      FF
+ 713              	.LVL71:
+ 714              	.L14:
+ 715              	.LBE123:
+ 716              	.LBE122:
+  56:src/main.c    **** 
+ 717              		.loc 1 56 0
+ 718 0476 488D1500 		leaq	.LC1(%rip), %rdx
+ 718      000000
+ 719 047d E9C1FCFF 		jmp	.L8
+ 719      FF
+ 720              	.L15:
+  59:src/main.c    **** 
+ 721              		.loc 1 59 0
+ 722 0482 488D1500 		leaq	.LC1(%rip), %rdx
+ 722      000000
+ 723 0489 E906FDFF 		jmp	.L9
+ 723      FF
+ 724              	.L16:
+  62:src/main.c    **** 
+ 725              		.loc 1 62 0
+ 726 048e 488D1500 		leaq	.LC1(%rip), %rdx
+ 726      000000
+ 727 0495 E94BFDFF 		jmp	.L10
+ 727      FF
+ 728              	.L11:
+ 729              	.LVL72:
+ 730              	.LBB124:
+ 731              	.LBB125:
+ 732              		.loc 2 104 0
+ 733 049a 488D3D00 		leaq	.LC32(%rip), %rdi
+ 733      000000
+ 734 04a1 E8000000 		call	puts@PLT
+ 734      00
+ 735              	.LVL73:
+ 736 04a6 E969FFFF 		jmp	.L12
+ 736      FF
+ 737              	.LVL74:
+ 738              	.L18:
+ 739              	.LBE125:
+ 740              	.LBE124:
+ 105:src/main.c    **** 
+GAS LISTING /tmp/cciFaveB.s 			page 23
+
+
+ 741              		.loc 1 105 0
+ 742 04ab E8000000 		call	__stack_chk_fail@PLT
+ 742      00
+ 743              	.LVL75:
+ 744              		.cfi_endproc
+ 745              	.LFE56:
+ 747              		.globl	test_str1
+ 748              		.section	.rodata.str1.8,"aMS",@progbits,1
+ 749              		.align 8
+ 750              	.LC35:
+ 751 0000 23746573 		.string	"#test_msg{<CMD1>\t\t @obj1($key11 =\t-1123334567  ; $key12 = 'string \"value\"')\n\r@obj2
+ 751      745F6D73 
+ 751      677B3C43 
+ 751      4D44313E 
+ 751      09092040 
+ 752              		.section	.data.rel.local.test_str1,"aw",@progbits
+ 753              		.align 8
+ 756              	test_str1:
+ 757 0000 00000000 		.quad	.LC35
+ 757      00000000 
+ 758              		.section	.rodata.cst8,"aM",@progbits,8
+ 759              		.align 8
+ 760              	.LC33:
+ 761 0000 00000000 		.long	0
+ 762 0004 80842E41 		.long	1093567616
+ 763              		.text
+ 764              	.Letext0:
+ 765              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h"
+ 766              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 767              		.file 5 "/usr/include/x86_64-linux-gnu/bits/libio.h"
+ 768              		.file 6 "/usr/include/stdio.h"
+ 769              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 770              		.file 8 "/usr/include/x86_64-linux-gnu/bits/types/clock_t.h"
+ 771              		.file 9 "/usr/include/time.h"
+ 772              		.file 10 "/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h"
+ 773              		.file 11 "inc/mcu_msg_cfg.h"
+ 774              		.file 12 "inc/mcu_msg.h"
+ 775              		.file 13 "<built-in>"
+GAS LISTING /tmp/cciFaveB.s 			page 24
 
 
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 main.c
-     /tmp/ccccU30j.s:7      .text.printf_mcu_msg_str:0000000000000000 printf_mcu_msg_str
-     /tmp/ccccU30j.s:134    .text.main:0000000000000000 main
-     /tmp/ccccU30j.s:563    .data.rel.local.test_str1:0000000000000000 test_str1
-     /tmp/ccccU30j.s:69     .rodata.main.str1.1:0000000000000000 .LC0
-     /tmp/ccccU30j.s:71     .rodata.main.str1.1:0000000000000014 .LC1
-     /tmp/ccccU30j.s:73     .rodata.main.str1.1:0000000000000028 .LC2
-     /tmp/ccccU30j.s:75     .rodata.main.str1.1:000000000000003b .LC3
-     /tmp/ccccU30j.s:77     .rodata.main.str1.1:0000000000000052 .LC4
-     /tmp/ccccU30j.s:81     .rodata.main.str1.8:0000000000000000 .LC5
-     /tmp/ccccU30j.s:84     .rodata.main.str1.1:000000000000005b .LC6
-     /tmp/ccccU30j.s:88     .rodata.main.str1.1:0000000000000071 .LC8
-     /tmp/ccccU30j.s:90     .rodata.main.str1.1:0000000000000084 .LC9
-     /tmp/ccccU30j.s:94     .rodata.main.str1.8:0000000000000028 .LC10
-     /tmp/ccccU30j.s:97     .rodata.main.str1.1:0000000000000089 .LC11
-     /tmp/ccccU30j.s:99     .rodata.main.str1.1:000000000000009c .LC12
-     /tmp/ccccU30j.s:103    .rodata.main.str1.8:0000000000000050 .LC13
-     /tmp/ccccU30j.s:106    .rodata.main.str1.8:0000000000000078 .LC14
-     /tmp/ccccU30j.s:109    .rodata.main.str1.1:00000000000000a1 .LC16
-     /tmp/ccccU30j.s:111    .rodata.main.str1.1:00000000000000a7 .LC17
-     /tmp/ccccU30j.s:115    .rodata.main.str1.8:00000000000000a0 .LC18
-     /tmp/ccccU30j.s:118    .rodata.main.str1.1:00000000000000ba .LC19
-     /tmp/ccccU30j.s:120    .rodata.main.str1.1:00000000000000c0 .LC20
-     /tmp/ccccU30j.s:124    .rodata.main.str1.8:00000000000000c0 .LC21
-     /tmp/ccccU30j.s:127    .rodata.main.str1.1:00000000000000d6 .LC22
-     /tmp/ccccU30j.s:86     .rodata.main.str1.1:000000000000005d .LC7
-     /tmp/ccccU30j.s:129    .rodata.main.str1.1:00000000000000dc .LC23
+     /tmp/cciFaveB.s:7      .text.printf_mcu_msg_str:0000000000000000 printf_mcu_msg_str
+     /tmp/cciFaveB.s:154    .text.main:0000000000000000 main
+     /tmp/cciFaveB.s:756    .data.rel.local.test_str1:0000000000000000 test_str1
+     /tmp/cciFaveB.s:73     .rodata.main.str1.1:000000000000000b .LC2
+     /tmp/cciFaveB.s:75     .rodata.main.str1.1:000000000000001f .LC3
+     /tmp/cciFaveB.s:77     .rodata.main.str1.1:0000000000000033 .LC4
+     /tmp/cciFaveB.s:79     .rodata.main.str1.1:0000000000000046 .LC5
+     /tmp/cciFaveB.s:81     .rodata.main.str1.1:000000000000005d .LC6
+     /tmp/cciFaveB.s:85     .rodata.main.str1.8:0000000000000000 .LC7
+     /tmp/cciFaveB.s:88     .rodata.main.str1.1:0000000000000066 .LC8
+     /tmp/cciFaveB.s:92     .rodata.main.str1.1:000000000000007c .LC10
+     /tmp/cciFaveB.s:94     .rodata.main.str1.1:0000000000000093 .LC11
+     /tmp/cciFaveB.s:69     .rodata.main.str1.1:0000000000000000 .LC0
+     /tmp/cciFaveB.s:96     .rodata.main.str1.1:0000000000000098 .LC12
+     /tmp/cciFaveB.s:98     .rodata.main.str1.1:000000000000009d .LC13
+     /tmp/cciFaveB.s:100    .rodata.main.str1.1:00000000000000b4 .LC14
+     /tmp/cciFaveB.s:102    .rodata.main.str1.1:00000000000000b9 .LC15
+     /tmp/cciFaveB.s:104    .rodata.main.str1.1:00000000000000d4 .LC16
+     /tmp/cciFaveB.s:106    .rodata.main.str1.1:00000000000000dd .LC17
+     /tmp/cciFaveB.s:108    .rodata.main.str1.1:00000000000000f0 .LC18
+     /tmp/cciFaveB.s:112    .rodata.main.str1.8:0000000000000028 .LC19
+     /tmp/cciFaveB.s:115    .rodata.main.str1.1:00000000000000f5 .LC20
+     /tmp/cciFaveB.s:117    .rodata.main.str1.1:0000000000000108 .LC21
+     /tmp/cciFaveB.s:121    .rodata.main.str1.8:0000000000000050 .LC22
+     /tmp/cciFaveB.s:124    .rodata.main.str1.8:0000000000000078 .LC23
+     /tmp/cciFaveB.s:127    .rodata.main.str1.1:000000000000010d .LC25
+     /tmp/cciFaveB.s:129    .rodata.main.str1.1:0000000000000113 .LC26
+     /tmp/cciFaveB.s:133    .rodata.main.str1.8:00000000000000a0 .LC27
+     /tmp/cciFaveB.s:136    .rodata.main.str1.1:0000000000000126 .LC28
+     /tmp/cciFaveB.s:138    .rodata.main.str1.1:000000000000012c .LC29
+     /tmp/cciFaveB.s:142    .rodata.main.str1.8:00000000000000c0 .LC30
+     /tmp/cciFaveB.s:145    .rodata.main.str1.1:0000000000000142 .LC31
+     /tmp/cciFaveB.s:760    .rodata.cst8:0000000000000000 .LC33
+     /tmp/cciFaveB.s:149    .rodata.main.str1.1:000000000000015e .LC34
+     /tmp/cciFaveB.s:90     .rodata.main.str1.1:0000000000000068 .LC9
+     /tmp/cciFaveB.s:71     .rodata.main.str1.1:0000000000000005 .LC1
+     /tmp/cciFaveB.s:147    .rodata.main.str1.1:0000000000000148 .LC32
 
 UNDEFINED SYMBOLS
 _GLOBAL_OFFSET_TABLE_
 putchar
+clock
 mcu_msg_string_hnd_create
 puts
 __printf_chk
 mcu_msg_get
+mcu_msg_is_cmd_att
 mcu_msg_parser_get_obj
 mcu_msg_parser_get_int
 mcu_msg_parser_get_float

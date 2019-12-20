@@ -12,18 +12,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mcu_msg_parser.h"
+#include <time.h>
+#include "mcu_msg.h"
 
 /*string printer on i386*/
 void printf_mcu_msg_str(mcu_msg_string_t str);
 
-const char *test_str1 = "#test_msg{<CMD1>\t\t @obj1($key11 =\t-1123334567  ; $key12 = 'string \"value\"')\n@obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)}";
+const char *test_str1 = "#test_msg{<CMD1>\t\t @obj1($key11 =\t-1123334567  ; $key12 = 'string \"value\"')\n\
+\r@obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)<CMD_last>}";
 
 
 int main()
 {
+    /*start the clock*/
+    clock_t begin = clock();
+    clock_t end;
+    double exec_time = 0.0;
 
-    
     mcu_msg_t msg;
     mcu_msg_obj_t obj1, obj2;
     mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_create(printf_mcu_msg_str);
@@ -33,6 +38,7 @@ int main()
 
     printf("test_str1 = \"%s\"\n\n", test_str1);
 
+    //##############################################################################################
     printf(">> getting test_msg...\n");
     msg = mcu_msg_get(test_str1, "test_msg", strlen(test_str1));
     if(msg.content.s != NULL) {
@@ -44,6 +50,16 @@ int main()
     } else {
         printf("message not found!\n\n");
     }
+
+    //##############################################################################################
+    printf(">> getting CMD1 cmd...\n");
+    printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD1") ? "True" : "False");
+
+    printf(">> getting CMD2 cmd...\n");
+    printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD2") ? "True" : "False");
+
+    printf(">> getting CMD_last cmd...\n");
+    printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD_last") ? "True" : "False");
 
     //##############################################################################################
     printf(">> getting obj1...\n");
@@ -80,6 +96,11 @@ int main()
         printf("error getting string\n\n");
     }
     
+    end = clock();
+
+    exec_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+    printf("Execution time: %f s\n", exec_time);
     return 0;
 }
 

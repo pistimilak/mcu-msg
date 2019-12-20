@@ -9,7 +9,7 @@
  * 
  */
 #include <stdio.h>
-#include "mcu_msg_parser.h"
+#include "mcu_msg.h"
 
 /*Control chars*/
 #define CTRL_MSG_FLAG           '#'
@@ -50,7 +50,7 @@ void mcu_msg_destroy_obj(mcu_msg_obj_t *obj)
  * @param c char
  * @return uint8_t comparison result
  */
-static uint8_t is_ctrl_char(char c)
+static inline uint8_t is_ctrl_char(char c)
 {
     switch(c) {
         case CTRL_MSG_FLAG:
@@ -71,8 +71,7 @@ static uint8_t is_ctrl_char(char c)
 }
 
 
-
-static uint8_t is_whitespace(char c)
+static inline uint8_t is_whitespace(char c)
 {
     switch(c) {
         case  ' ':
@@ -93,7 +92,7 @@ static uint8_t is_whitespace(char c)
  * @param c char
  * @return uint8_t comparison result
  */
-static uint8_t is_valid_keyword_char(char c)
+static inline uint8_t is_valid_keyword_char(char c)
 {
     return (c == '_') || (c >= 'a' && c <= 'z') || 
                     (c >= 'A' && c <= 'Z') || 
@@ -109,16 +108,25 @@ static uint8_t is_valid_keyword_char(char c)
  */
 static mcu_msg_size_t str_len(char *str)
 {
-    mcu_msg_size_t res = 0;
+    // mcu_msg_size_t res = 0;
     char *p = str;
-    while(*p) {
-        res++;
+    while(*p)
         p++;
-    }
-    return res;
+    return (p - str);
 }
 
 
+static inline uint8_t is_in_str_buff(mcu_msg_string_t str, char *p)
+{
+    return ((p - str.s) < str.len);
+}
+
+/**
+ * @brief 
+ * 
+ * @param start 
+ * @return char* 
+ */
 static char *skip_internal_str(char *start)
 {
     char *p = start;
@@ -132,48 +140,49 @@ static char *skip_internal_str(char *start)
     return *p ? ++p : NULL;
 }
 
-
 /**
  * @brief find the position of the keyword int message string (first occurance)
  * if the keyword found in the message string, the next (none space) char must be stopc
- * @param msg message
- * @param len message length
+ * @param str source string
  * @param keyword keword has to be found
  * @param flagc flag, eg. '@', '$'
  * @param stopc stop character eg. '(', '='
- * @return char* location of the keyword (whitout flag) or NULL if keyword not found
+ * @return mcu_msg_string_t location and size of the keyword (whitout flag) or NULL if keyword not found
  */
-static char *find_keyword(char *msg, mcu_msg_size_t len, char *keyword, char flagc, char stopc)
+static mcu_msg_string_t find_keyword(mcu_msg_string_t str, char *keyword, char flagc, char stopc)
 {
-    char *p = msg;
-    char *loc;
+
+    mcu_msg_string_t res;
+    char *p = str.s;
     uint8_t equal;
     mcu_msg_size_t i;
-    mcu_msg_size_t key_len = str_len(keyword);
-    while((p - msg) < len && *p) {
+    res.len = str_len(keyword);
+    while(is_in_str_buff(str, p) && *p) {
         if(*p == '\'' || *p == '"') { //skip internal strings
             p = skip_internal_str(p);
         }
-        if(((p - msg) < len - 1) && *p == flagc) {
-            loc = p + 1;
+        if(is_in_str_buff(str, p)  && *p == flagc) {
+            res.s = p + 1;
             equal = 1;
-            for(i = 0; (loc + i - msg) < len && i < key_len; i++) {
-                if((*(loc + i) != *(keyword + i)) || is_ctrl_char(*(loc + i)) || 
-                                    !is_valid_keyword_char(*(loc + i))) {
+            for(i = 0; is_in_str_buff(str, res.s + i) && i < res.len; i++) {
+                if((*(res.s + i) != *(keyword + i)) || is_ctrl_char(*(res.s + i)) || 
+                                    !is_valid_keyword_char(*(res.s + i))) {
                     equal = 0;
                     break;
                 }
             }
-            while((loc + i - msg) < len && is_whitespace(*(loc + i))) i++; //skip spaces
-            if(equal && *(loc + i) == stopc) {
-                return loc;
+            while(is_in_str_buff(str, res.s + i) && is_whitespace(*(res.s + i))) i++; //skip spaces
+            if(equal && *(res.s + i) == stopc) {
+                return res;
             } else {
-                p = loc + i;
+                p = res.s + i;
             }
         }
         p++;
     }
-    return NULL;
+    // if not found
+    mcu_msg_destroy_string(&res);
+    return res;
 }
 
 
@@ -184,44 +193,50 @@ static char *find_keyword(char *msg, mcu_msg_size_t len, char *keyword, char fla
  * @param key key for search
  * @return char* location of the value start point or NULL if the key was not found
  */
-static char *find_val(mcu_msg_obj_t obj, char *key)
+
+static mcu_msg_string_t find_val(mcu_msg_obj_t obj, char *key)
 {
-    char *loc = find_keyword(obj.content.s, obj.content.len, key, CTRL_KEY_FLAG, CTRL_KEY_EQU); //object start with @ and terminated with space or '('
+    mcu_msg_string_t res  = find_keyword(obj.content, key, CTRL_KEY_FLAG, CTRL_KEY_EQU); //object start with @ and terminated with space or '('
     char *p;
-    if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
-        return NULL;
+    if(res.s == NULL) { //if keyword not found, return with NULLs and 0 lengths
+        mcu_msg_destroy_string(&res);
+        return res;
     }
-    p = loc + str_len(key);
-    if(*p != CTRL_KEY_EQU) {
-        while(((p - obj.content.s) < (obj.content.len - 1)) && *p != CTRL_KEY_EQU) p++;
+    if(*res.s != CTRL_KEY_EQU) {
+        while(is_in_str_buff(obj.content, res.s + 1) && *res.s != CTRL_KEY_EQU) res.s++;
     }
-    p++;
-    while((p - obj.content.s) < obj.content.len && is_whitespace(*p)) p++; //skip spaces after equal
-    return p;
+    res.s++;
+    while(is_in_str_buff(obj.content, res.s) && is_whitespace(*res.s)) res.s++; //skip spaces after equal
+
+    p = res.s;
+    while(is_in_str_buff(obj.content, p) && !is_whitespace(*p) && !is_ctrl_char(*p)) p++; //calc length
+    res.len = p - res.s;
+
+    return res;
 }
+
 
 
 mcu_msg_t mcu_msg_get(char *raw_str, char *id, mcu_msg_size_t len)
 {
     mcu_msg_t res;
-    char *loc = find_keyword(raw_str, len, id, CTRL_MSG_FLAG, CTRL_START_MSG); //object start with @ and terminated with space or '('
+    res.content.s = raw_str;
+    res.content.len = len;
+    res.id = find_keyword(res.content, id, CTRL_MSG_FLAG, CTRL_START_MSG); //object start with @ and terminated with space or '('
     char *p;
-    if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
+    if(res.id.s == NULL) { //if keyword not found, return with NULLs and 0 lengths
         mcu_msg_destroy(&res);
         return res;
     }
-    res.id.s = loc;
-    res.id.len = str_len(id);
-    p = loc + res.id.len;
+    p = res.id.s + res.id.len;
     if (*p != CTRL_START_MSG) {
-        while(((p - raw_str) < (len - 1)) && *p != CTRL_START_MSG) p++;
+        while(is_in_str_buff(res.content, p + 1) && *p != CTRL_START_MSG) p++;
     }
-    res.content.s = ++p;
-    res.content.len = 0;
-    while((p - raw_str) < len && *p != CTRL_STOP_MSG) {
+    ++p;
+    while(is_in_str_buff(res.content, p) && *p != CTRL_STOP_MSG) {
         p++;
-        res.content.len++;
     }
+    res.content.len = p - res.content.s;
     return res;
 }
 
@@ -230,33 +245,29 @@ mcu_msg_t mcu_msg_get(char *raw_str, char *id, mcu_msg_size_t len)
 mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id)
 {
     mcu_msg_obj_t res;
-    char *loc = find_keyword(msg.content.s, msg.content.len, id, CTRL_OBJ_FLAG, CTRL_START_OBJ); //object start with @ and terminated with space or '('
+    res.id = find_keyword(msg.content, id, CTRL_OBJ_FLAG, CTRL_START_OBJ); //object start with @ and terminated with space or '('
     char *p;
-    if(loc == NULL) { //if keyword not found, return with NULLs and 0 lengths
+    if(res.id.s == NULL) { //if keyword not found, return with NULLs and 0 lengths
         mcu_msg_destroy_obj(&res);
         return res;
     }
 
-    res.id.s = loc;
-    res.id.len = str_len(id);
-    p = loc + res.id.len;
+    p = res.id.s;
     if (*p != CTRL_START_OBJ) {
-        while(((p - msg.content.s) < (msg.content.len - 1)) && *p != CTRL_START_OBJ) p++;
+        while(is_in_str_buff(msg.content, p + 1) && *p != CTRL_START_OBJ) p++;
     }
     res.content.s = ++p;
-    res.content.len = 0;
-    while((p - msg.content.s) < msg.content.len && *p != CTRL_STOP_OBJ) {
+    while(is_in_str_buff(msg.content, p) && *p != CTRL_STOP_OBJ) {
         p++;
-        res.content.len++;
     }
+    res.content.len = p - res.content.s;
     return res;
 }
 
 uint8_t mcu_msg_is_cmd_att(mcu_msg_t msg, char *cmd_id)
 {
-    char *loc = find_keyword(msg.content.s, msg.content.len, cmd_id, CTRL_CMD_START_FLAG, CTRL_CMD_STOP_FLAG); //object start with @ and terminated with space or '('
-    char *p;
-    if(loc == NULL) { //if cmd not found, return 0
+    mcu_msg_string_t res = find_keyword(msg.content, cmd_id, CTRL_CMD_START_FLAG, CTRL_CMD_STOP_FLAG); //object start with @ and terminated with space or '('
+    if(res.s == NULL) { //if cmd not found, return 0
         return 0;
     } else {
         return 1;
@@ -265,41 +276,41 @@ uint8_t mcu_msg_is_cmd_att(mcu_msg_t msg, char *cmd_id)
 
 int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
 {
-    char *p = find_val(obj, key);
+    mcu_msg_string_t sval = find_val(obj, key);
     mcu_msg_size_t i;
     unsigned m = 1;
     int sign = 1;
     int8_t res = 0; // result of function
 
-    if(p == NULL)  //key nout found
+    if(sval.s == NULL)  //key nout found
         return -1;
 
 
-    switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
+    switch(*sval.s) { //if the sign is defined, set the sign variable and increment the pointer
         case '+':
             sign = 1;
-            p++;
+            sval.s++;
         break;
         
         case '-':
             sign = -1;
-            p++;
+            sval.s++;
         break;
         
         default:
         break;
     }
 
-    for(i = 0; (p - obj.content.s) < obj.content.len && !is_whitespace(*p) && *p != CTRL_KEY_SEP; i++, p++) { //move to the end of the value string with i
-        if(*p < '0' || *p > '9') {    // if non valid number, return with error
+    for(i = 0; is_in_str_buff(obj.content, sval.s) && !is_whitespace(*sval.s) && *sval.s != CTRL_KEY_SEP; i++, sval.s++) { //move to the end of the value string with i
+        if(*sval.s < '0' || *sval.s > '9') {    // if non valid number, return with error
             return -1;
         }
     }
 
     *res_val = 0;
-    --p;
+    --sval.s;
     while(i--) {
-        *res_val += (*p-- - '0') * m;
+        *res_val += (*sval.s-- - '0') * m;
         m *= 10;
         res++;
     }
@@ -312,7 +323,7 @@ int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
 
 int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
 {
-    char *p = find_val(obj, key);
+    mcu_msg_string_t sval = find_val(obj, key);
     char *pf;
     mcu_msg_size_t i;
     unsigned m = 1;
@@ -320,19 +331,19 @@ int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
     int sign = 1;
     int8_t res = 0; // result of function
 
-    if(p == NULL)  //key nout found
+    if(sval.s == NULL)  //key nout found
         return -1;
 
 
-    switch(*p) { //if the sign is defined, set the sign variable and increment the pointer
+    switch(*sval.s) { //if the sign is defined, set the sign variable and increment the pointer
         case '+':
             sign = 1;
-            p++;
+            sval.s++;
         break;
         
         case '-':
             sign = -1;
-            p++;
+            sval.s++;
         break;
         
         default:
@@ -340,30 +351,30 @@ int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
     }
 
     //move p to dec separator or end of the value
-    for(i = 0; (p - obj.content.s) < obj.content.len && !is_whitespace(*p) && *p != CTRL_KEY_SEP && *p != '.'; i++, p++) { 
-        if((*p < '0' || *p > '9')) {    // if non valid number, return with error
+    for(i = 0; is_in_str_buff(obj.content, sval.s) && !is_whitespace(*sval.s) && *sval.s != CTRL_KEY_SEP && *sval.s != '.'; i++, sval.s++) { 
+        if((*sval.s < '0' || *sval.s > '9')) {    // if non valid number, return with error
             return -1;
         }
     }
 
     *res_val = 0.0;
     
-    if(*p == '.') {
-        pf = p + 1;
+    if(*sval.s == '.') {
+        pf = sval.s + 1;
         res++;
     } else {
         pf = NULL;
     }
 
-    --p;
+    --sval.s;
     while(i--) {
-        *res_val += (*p-- - '0') * m;
+        *res_val += (*sval.s-- - '0') * m;
         m *= 10;
         res++;
     }
     
     // calculate floating point section after '.' (if there is)
-    for(; pf != NULL && (pf - obj.content.s) < obj.content.len && !is_whitespace(*pf) && *pf != CTRL_KEY_SEP; pf++) {
+    for(; pf != NULL && is_in_str_buff(obj.content, pf) && !is_whitespace(*pf) && *pf != CTRL_KEY_SEP; pf++) {
         if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
             return -1;
         }
@@ -381,25 +392,25 @@ int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
 
 mcu_msg_string_t mcu_msg_parser_get_string(mcu_msg_obj_t obj, char *key)
 {
-    char *p = find_val(obj, key);
+    mcu_msg_string_t res = find_val(obj, key);
     char qmark;
-    mcu_msg_string_t res;
+    char *p;
 
-    if(p == NULL) {
+    if(res.s == NULL) {
         mcu_msg_destroy_string(&res);
         return res;
     }
         
-    qmark = *p;
+    qmark = *res.s;
 
     if(qmark != '\'' && qmark != '"') { // qmark not found, this is not a string
         mcu_msg_destroy_string(&res);
         return res;
     }
 
-    res.s = ++p;
+    p = ++res.s;
     res.len = 0;
-    while((p - obj.content.s) < obj.content.len && *p != qmark) {
+    while(is_in_str_buff(obj.content, p) && *p != qmark) {
         res.len++;
         p++;
     }

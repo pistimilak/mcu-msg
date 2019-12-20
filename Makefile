@@ -6,7 +6,7 @@
 ######################################
 # target
 ######################################
-TARGET = mcu-msg-parser
+TARGET = mcu-msg
 
 
 ######################################
@@ -30,7 +30,7 @@ BIN_DIR = bin
 # C sources
 C_SOURCES =  \
 src/main.c \
-src/mcu_msg_parser.c
+src/mcu_msg.c
 
 
 # ASM sources
