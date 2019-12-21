@@ -29,10 +29,17 @@ int main()
     clock_t end;
     double exec_time = 0.0;
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                 MCU-MSG Parser test                                       //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
     mcu_msg_t msg;
     mcu_msg_obj_t obj1, obj2;
+    mcu_msg_cmd_t cmd;
     mcu_msg_string_hnd_t str_hnd = mcu_msg_string_hnd_create(printf_mcu_msg_str);
-
+    
     printf("TEST mcu-msg-parser\n");
     printf("-------------------\n");
 
@@ -53,13 +60,16 @@ int main()
 
     //##############################################################################################
     printf(">> getting CMD1 cmd...\n");
-    printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD1") ? "True" : "False");
+    cmd = mcu_msg_parser_get_cmd(msg, "CMD1");
+    printf("%s\n\n", cmd.cmd.s ? "True" : "False");
 
     printf(">> getting CMD2 cmd...\n");
-    printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD2") ? "True" : "False");
+    cmd = mcu_msg_parser_get_cmd(msg, "CMD2");
+    printf("%s\n\n", cmd.cmd.s ? "True" : "False");
 
     printf(">> getting CMD_last cmd...\n");
-    printf("%s\n\n", mcu_msg_is_cmd_att(msg, "CMD_last") ? "True" : "False");
+    cmd = mcu_msg_parser_get_cmd(msg, "CMD_last");
+    printf("%s\n\n", cmd.cmd.s ? "True" : "False");
 
     //##############################################################################################
     printf(">> getting obj1...\n");
@@ -76,7 +86,7 @@ int main()
     printf("\n\n");
     
     //##############################################################################################
-    printf(">> getting obj1->key11 intiger...\n");
+    printf(">> getting obj1->key11 integer...\n");
     int ival = 0, res;
     float fval = 0.0;
     res = mcu_msg_parser_get_int(&ival, obj1, "key11");
@@ -91,7 +101,7 @@ int main()
     printf(">> getting obj1->key12 string...\n");
     mcu_msg_string_t str = mcu_msg_parser_get_string(obj1, "key12");
     if(str.s != NULL) {
-        str_hnd.print(str); printf("\n\n");
+        str_hnd.print(str); printf(" len: %d\n\n", str.len);
     } else {
         printf("error getting string\n\n");
     }
@@ -99,6 +109,45 @@ int main()
     end = clock();
 
     exec_time = (double)(end - begin) / CLOCKS_PER_SEC;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                 MCU-MSG Wrapper test                                      //
+///////////////////////////////////////////////////////////////////////////////////////////////
+    printf("TEST mcu-msg-wrapper\n");
+    printf("-------------------\n");
+
+    // mcu_msg_wrapper_t msg_wrapp;
+    mcu_msg_obj_t obj_wrapp;
+    mcu_msg_string_t str1, str2, str3;
+
+    str1.s = "string1 content";
+    str1.len = strlen(str1.s);
+
+    str2.s = "string2 'content'";
+    str2.len = strlen(str2.s);
+
+    str3.s = "string3 \"content\"";
+    str3.len = strlen(str3.s);
+    
+    obj_wrapp.id.s = "Res_Obj";
+    obj_wrapp.id.len = strlen(obj_wrapp.id.s);
+    mcu_msg_wrapper_init_obj_queues(&obj_wrapp);
+    mcu_msg_wrapper_add_string_to_obj(&obj_wrapp, &str1);
+    mcu_msg_wrapper_add_string_to_obj(&obj_wrapp, &str2);
+    mcu_msg_wrapper_add_string_to_obj(&obj_wrapp, &str3);
+
+    mcu_msg_string_t *sp = obj_wrapp.string_queue;
+    putchar('@'); str_hnd.print(obj_wrapp.id); putchar('{');
+
+    while(sp != NULL) {
+        putchar('$');
+        str_hnd.print(*sp);
+        sp = sp->next;
+        if(sp != NULL) putchar(';');
+    
+    }
+    putchar('}');
 
     printf("Execution time: %f s\n", exec_time);
     return 0;

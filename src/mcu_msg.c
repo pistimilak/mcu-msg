@@ -24,18 +24,26 @@
 #define CTRL_CMD_START_FLAG     '<'
 #define CTRL_CMD_STOP_FLAG      '>'
 
+/*putchar implementation: must be implemented for printing to UART or other output*/
+static int (*mcu_msg_putc)(char) = NULL; 
+
+
+/*destroy string*/
 void mcu_msg_destroy_string(mcu_msg_string_t *str)
 {
     str->s = NULL;
     str->len = 0;
 }
 
+/*destroy message*/
 void mcu_msg_destroy(mcu_msg_t *msg)
 {
     mcu_msg_destroy_string(&msg->id);
     mcu_msg_destroy_string(&msg->content);
 }
 
+
+/*destroy object*/
 void mcu_msg_destroy_obj(mcu_msg_obj_t *obj)
 {
     mcu_msg_destroy_string(&obj->id);
@@ -70,7 +78,12 @@ static inline uint8_t is_ctrl_char(char c)
     }
 }
 
-
+/**
+ * @brief Char is a whitespace
+ * 
+ * @param c char
+ * @return uint8_t comparison result
+ */
 static inline uint8_t is_whitespace(char c)
 {
     switch(c) {
@@ -92,13 +105,16 @@ static inline uint8_t is_whitespace(char c)
  * @param c char
  * @return uint8_t comparison result
  */
-static inline uint8_t is_valid_keyword_char(char c)
-{
-    return (c == '_') || (c >= 'a' && c <= 'z') || 
-                    (c >= 'A' && c <= 'Z') || 
-                    (c >= '0' && c <= '9') ? 1 : 0;
-}
-
+// static inline uint8_t is_valid_keyword_char(char c)
+// {
+//     return (c == '_') || (c >= 'a' && c <= 'z') || 
+//                     (c >= 'A' && c <= 'Z') || 
+//                     (c >= '0' && c <= '9') ? 1 : 0;
+// }
+#define is_valid_keyword_char(c)        ((c == '_') || \
+                                        (c >= 'a' && c <= 'z') || \ 
+                                        (c >= 'A' && c <= 'Z') || \
+                                        (c >= '0' && c <= '9'))
 
 /**
  * @brief strlen implementation for internal usage
@@ -108,24 +124,29 @@ static inline uint8_t is_valid_keyword_char(char c)
  */
 static mcu_msg_size_t str_len(char *str)
 {
-    // mcu_msg_size_t res = 0;
     char *p = str;
     while(*p)
         p++;
     return (p - str);
 }
 
-
+/**
+ * @brief Deciding char pointer is in the string buffer or not
+ * 
+ * @param str string buffer with start pointer and length
+ * @param p current pointer
+ * @return uint8_t return boole result
+ */
 static inline uint8_t is_in_str_buff(mcu_msg_string_t str, char *p)
 {
     return ((p - str.s) < str.len);
 }
 
 /**
- * @brief 
+ * @brief Skiping internal string from start qoution mark to end qmark
  * 
- * @param start 
- * @return char* 
+ * @param start start pointer
+ * @return char* return end pointer
  */
 static char *skip_internal_str(char *start)
 {
@@ -161,10 +182,10 @@ static mcu_msg_string_t find_keyword(mcu_msg_string_t str, char *keyword, char f
         if(*p == '\'' || *p == '"') { //skip internal strings
             p = skip_internal_str(p);
         }
-        if(is_in_str_buff(str, p)  && *p == flagc) {
+        if(is_in_str_buff(str, p)  && *p == flagc) { // if flag char detected start the analization
             res.s = p + 1;
             equal = 1;
-            for(i = 0; is_in_str_buff(str, res.s + i) && i < res.len; i++) {
+            for(i = 0; is_in_str_buff(str, res.s + i) && i < res.len; i++) { // if not equal during the iterateion, break the loop
                 if((*(res.s + i) != *(keyword + i)) || is_ctrl_char(*(res.s + i)) || 
                                     !is_valid_keyword_char(*(res.s + i))) {
                     equal = 0;
@@ -172,15 +193,15 @@ static mcu_msg_string_t find_keyword(mcu_msg_string_t str, char *keyword, char f
                 }
             }
             while(is_in_str_buff(str, res.s + i) && is_whitespace(*(res.s + i))) i++; //skip spaces
-            if(equal && *(res.s + i) == stopc) {
+            if(equal && *(res.s + i) == stopc) { //if the stop char is the next, whitout spaces, return with the match string
                 return res;
             } else {
-                p = res.s + i;
+                p = res.s + i; // if not matched, return continue the iteration from last checked char
             }
         }
         p++;
     }
-    // if not found
+    // if not found (loop finished whitout match) return with a destroyed string
     mcu_msg_destroy_string(&res);
     return res;
 }
@@ -202,7 +223,7 @@ static mcu_msg_string_t find_val(mcu_msg_obj_t obj, char *key)
         mcu_msg_destroy_string(&res);
         return res;
     }
-    if(*res.s != CTRL_KEY_EQU) {
+    if(*res.s != CTRL_KEY_EQU) { // move pointer to 'equal'
         while(is_in_str_buff(obj.content, res.s + 1) && *res.s != CTRL_KEY_EQU) res.s++;
     }
     res.s++;
@@ -216,7 +237,7 @@ static mcu_msg_string_t find_val(mcu_msg_obj_t obj, char *key)
 }
 
 
-
+/*get message*/
 mcu_msg_t mcu_msg_get(char *raw_str, char *id, mcu_msg_size_t len)
 {
     mcu_msg_t res;
@@ -228,12 +249,12 @@ mcu_msg_t mcu_msg_get(char *raw_str, char *id, mcu_msg_size_t len)
         mcu_msg_destroy(&res);
         return res;
     }
-    p = res.id.s + res.id.len;
-    if (*p != CTRL_START_MSG) {
+    p = res.id.s + res.id.len; //init pointer to end of the id
+    if (*p != CTRL_START_MSG) { // if the next char is not START_MSG, move to the start flag
         while(is_in_str_buff(res.content, p + 1) && *p != CTRL_START_MSG) p++;
     }
-    ++p;
-    while(is_in_str_buff(res.content, p) && *p != CTRL_STOP_MSG) {
+    res.content.s = ++p; // set content string pointer to the current pos
+    while(is_in_str_buff(res.content, p) && *p != CTRL_STOP_MSG) { //calc length
         p++;
     }
     res.content.len = p - res.content.s;
@@ -252,7 +273,7 @@ mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id)
         return res;
     }
 
-    p = res.id.s;
+    p = res.id.s + res.id.len;
     if (*p != CTRL_START_OBJ) {
         while(is_in_str_buff(msg.content, p + 1) && *p != CTRL_START_OBJ) p++;
     }
@@ -264,14 +285,12 @@ mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id)
     return res;
 }
 
-uint8_t mcu_msg_is_cmd_att(mcu_msg_t msg, char *cmd_id)
+mcu_msg_cmd_t mcu_msg_parser_get_cmd(mcu_msg_t msg, char *cmd_id)
 {
-    mcu_msg_string_t res = find_keyword(msg.content, cmd_id, CTRL_CMD_START_FLAG, CTRL_CMD_STOP_FLAG); //object start with @ and terminated with space or '('
-    if(res.s == NULL) { //if cmd not found, return 0
-        return 0;
-    } else {
-        return 1;
-    }
+    mcu_msg_cmd_t res;
+    // return with the find result
+    res.cmd = find_keyword(msg.content, cmd_id, CTRL_CMD_START_FLAG, CTRL_CMD_STOP_FLAG);
+    return res;
 }
 
 int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
@@ -309,7 +328,7 @@ int8_t mcu_msg_parser_get_int(int *res_val, mcu_msg_obj_t obj, char *key)
 
     *res_val = 0;
     --sval.s;
-    while(i--) {
+    while(i--) { //convert value to integer
         *res_val += (*sval.s-- - '0') * m;
         m *= 10;
         res++;
@@ -367,7 +386,7 @@ int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key)
     }
 
     --sval.s;
-    while(i--) {
+    while(i--) { // convert integer part
         *res_val += (*sval.s-- - '0') * m;
         m *= 10;
         res++;
@@ -409,11 +428,10 @@ mcu_msg_string_t mcu_msg_parser_get_string(mcu_msg_obj_t obj, char *key)
     }
 
     p = ++res.s;
-    res.len = 0;
-    while(is_in_str_buff(obj.content, p) && *p != qmark) {
-        res.len++;
+    while(is_in_str_buff(obj.content, p) && *p != qmark) { // calc len
         p++;
     }
+    res.len = p - res.s;
     return res;
 }
 
@@ -442,11 +460,95 @@ static void mcu_msg_str_copy(mcu_msg_string_t dest, mcu_msg_string_t source)
 }
 
 
-mcu_msg_string_hnd_t mcu_msg_string_hnd_create(void (*print)(mcu_msg_string_t))
+
+void mcu_msg_print_str(mcu_msg_string_t str)
+{
+    mcu_msg_size_t i;
+    for(i = 0; i < str.len; mcu_msg_putc(*(str.s + i++)));
+}
+
+/**
+ * @brief Create string handler and set the basic functions
+ * 
+ * @param print expected print function, set to NULL if you don't need the print feature
+ * @return mcu_msg_string_hnd_t handler
+ */
+mcu_msg_string_hnd_t mcu_msg_string_hnd_create(int (*putc)(char))
 {
     mcu_msg_string_hnd_t hnd;
+    mcu_msg_putc = putc;            // init putchar
     hnd.copy_to_chr_arr = mcu_msg_str_copy_to_chr_arr;
     hnd.copy = mcu_msg_str_copy;
-    hnd.print = print;
+    hnd.print = mcu_msg_print_str;
     return hnd;
 }
+
+/*Wrapper functions*/
+#if MCU_MSG_USE_WRAPPER
+void mcu_msg_wrapper_init_obj_queues(mcu_msg_obj_wrap_t *obj)
+{
+    obj->int_queue = NULL;
+    obj->float_queue = NULL;
+    obj->string_queue = NULL;
+}
+
+// void mcu_msg_
+
+void mcu_msg_wrapper_add_string_to_obj(mcu_msg_obj_wrap_t *obj, mcu_msg_string_wrap_t *str)
+{
+    mcu_msg_string_wrap_t *strp;
+    if(obj->string_queue == NULL) { //first element
+        obj->string_queue = str;
+        obj->string_queue->next = NULL;
+    } else {
+        strp = obj->string_queue;
+
+        while(strp->next != NULL) 
+            strp = strp->next;
+        strp->next = str;
+        str->next = NULL;
+    }
+}
+
+// void mcu_msg_wrapper_add_int_to_obj(mcu_msg_obj_t *obj, mcu_msg_int_t *int_valp)
+// {
+//     mcu_msg_int_t *ip;
+//     if(obj->int_queue = NULL) { //first element
+//         obj->int_queue = int_valp;
+//         obj->string_queue->next = NULL;
+//     } else {
+//         ip = obj->int_queue;
+
+//         while(ip->next != NULL) ip++;
+//         ip->next = int_valp;
+//         int_valp->next = NULL;
+//     }
+// }
+
+
+// void mcu_msg_wrapper_add_float_to_obj(mcu_msg_obj_t *obj, mcu_msg_float_t *float_valp)
+// {
+//     mcu_msg_float_t *fp;
+//     if(obj->float_queue = NULL) { //first element
+//         obj->float_queue = float_valp;
+//         obj->float_queue->next = NULL;
+//     } else {
+//         fp = obj->float_queue;
+
+//         while(fp->next != NULL) fp++;
+//         fp->next = float_valp;
+//         float_valp->next = NULL;
+//     }
+// }
+
+// void mcu_msg_wrapper_print_obj(mcu_msg_obj_t obj){
+
+// }
+
+// void mcu_msg_add_object_to_msg(mcu_msg_t *msg, mcu_msg_obj_t *obj)
+// {
+//     mcu_msg_obj_t *op;
+//     if
+// }
+
+#endif
