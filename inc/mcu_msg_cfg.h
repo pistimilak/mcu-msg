@@ -1,5 +1,5 @@
 /**
- * @file mmsg_cfg.h
+ * @file msg_cfg.h
  * @author Istvan Milak (istvan.milak@gmail.com)
  * @brief Configuration for mcu-msg library
  * @version 0.1
@@ -17,7 +17,7 @@
 /*
 define the size of message type
 */
-typedef uint16_t mmsg_size_t;
+typedef uint16_t msg_size_t;
 
 
 /*
