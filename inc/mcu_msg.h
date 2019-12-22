@@ -18,30 +18,30 @@ Length is necessary to use same buffer where there isn't 0 terminator
 */
 typedef struct {
     char *s;                  // pointer to string content in the buffer
-    mcu_msg_size_t len;       // string length
-} mcu_msg_string_t;
+    mmsg_size_t len;       // string length
+} mmsg_string_t;
 
 typedef struct {
-    mcu_msg_string_t cmd;
-} mcu_msg_cmd_t;
+    mmsg_string_t cmd;
+} mmsg_cmd_t;
 
 typedef struct {
-    int (*putc)(char);
-    void (*copy_to_chr_arr)(char *, mcu_msg_string_t);  // copy strint type to char array function pointer
-    void (*copy)(mcu_msg_string_t, mcu_msg_string_t);   // copy string type to an other one function pointer
-    void (*print)(mcu_msg_string_t);                    // print string type function pointer
-} mcu_msg_string_hnd_t;
+    int (*putc) (char);
+    void (*copy_to_chr_arr) (char *, mmsg_string_t);  // copy strint type to char array function pointer
+    void (*copy) (mmsg_string_t, mmsg_string_t);   // copy string type to an other one function pointer
+    void (*print) (mmsg_string_t);                    // print string type function pointer
+} mmsg_string_hnd_t;
 
 
 typedef struct {
-    mcu_msg_string_t id;        // id string
-    mcu_msg_string_t content;   // content string
-} mcu_msg_t;
+    mmsg_string_t id;        // id string
+    mmsg_string_t content;   // content string
+} mmsg_t;
 
 typedef struct{
-    mcu_msg_string_t id;        // id string
-    mcu_msg_string_t content;   // content string
-} mcu_msg_obj_t;
+    mmsg_string_t id;        // id string
+    mmsg_string_t content;   // content string
+} mmsg_obj_t;
 
 
 
@@ -50,53 +50,56 @@ typedef struct{
 
 /*String type for wrapper*/
 typedef struct {
-    mcu_msg_string_t id;
-    mcu_msg_string_t content;
-    mcu_msg_string_wrap_t *next;
-} mcu_msg_string_wrap_t;
+    mmsg_string_t id;
+    mmsg_string_t content;
+    struct mmsg_string_wrap_t *next;
+} mmsg_string_wrap_t;
 
 
 /*Int type for wrapper*/
 typedef struct {
-    mcu_msg_string_t id;
+    mmsg_string_t id;
     int val;
-    struct mcu_msg_int_t *next;
-} mcu_msg_int_wrap_t;
+    struct mmsg_int_t *next;
+} mmsg_int_wrap_t;
 
 
 /*Float type for wrapper*/
 typedef struct {
-    mcu_msg_string_t id;
+    mmsg_string_t id;
     float val;
-    struct mcu_msg_float_t *next;
-} mcu_msg_float_wrap_t;
+    uint8_t prec;                   // precision for printing
+    struct mmsg_float_t *next;
+} mmsg_float_wrap_t;
 
 /*cmd type for wrapper*/
-typedef struct mcu_msg_cmd{
-    mcu_msg_string_t cmd;
-    struct mcu_msg_cmd_t *next;
-} mcu_msg_cmd_wrap_t;
+typedef struct {
+    mmsg_string_t cmd;
+    struct mmsg_cmd_t *next;
+} mmsg_cmd_wrap_t;
 
 typedef struct {
-    mcu_msg_string_t id;        // id string
-    mcu_msg_string_t content; 
-    mcu_msg_int_wrap_t *int_queue;
-    mcu_msg_float_wrap_t *float_queue;
-    mcu_msg_string_wrap_t *string_queue;
-    struct mcu_msg_obj_t *next;
-} mcu_msg_obj_wrap_t;
+    mmsg_string_t id;        // id string
+    // mmsg_string_t content; 
+    mmsg_int_wrap_t *int_queue;
+    mmsg_float_wrap_t *float_queue;
+    mmsg_string_wrap_t *string_queue;
+    struct mmsg_obj_t *next;
+} mmsg_obj_wrap_t;
 
 typedef struct {
-    mcu_msg_string_t id;
-    mcu_msg_obj_t *obj_queue;
-    mcu_msg_cmd_t *cmd_queue;
-} mcu_msg_wrap_t;
+    mmsg_string_t id;
+    mmsg_obj_wrap_t *obj_queue;
+    mmsg_cmd_wrap_t *cmd_queue;
+} mmsg_wrap_t;
 
 typedef struct {
     // int (*putc) (char);
-    void (*print) (mcu_msg_wrap_t *);
-    void (*print_buff) (mcu_msg_wrap_t *, char *, mcu_msg_size_t);
-} mcu_msg_wrap_hnd_t;
+    void (*print) (mmsg_wrap_t);
+    void (*print_obj) (mmsg_obj_wrap_t);
+    void (*print_cmd) (mmsg_cmd_wrap_t);
+    char* (*print_to_buff) (mmsg_wrap_t, char *, mmsg_size_t);
+} mmsg_wrap_hnd_t;
 #endif
 
 
@@ -105,7 +108,7 @@ typedef struct {
  * 
  * @param msg 
  */
-void mcu_msg_destroy(mcu_msg_t *msg);
+void mmsg_destroy(mmsg_t *msg);
 
 
 /**
@@ -113,14 +116,14 @@ void mcu_msg_destroy(mcu_msg_t *msg);
  * 
  * @param obj 
  */
-void mcu_msg_destroy_obj(mcu_msg_obj_t *obj);
+void mmsg_destroy_obj(mmsg_obj_t *obj);
 
 /**
  * @brief 
  * 
  * @param str 
  */
-void mcu_msg_destroy_string(mcu_msg_string_t *str);
+void mmsg_destroy_string(mmsg_string_t *str);
 
 /**
  * @brief 
@@ -128,18 +131,18 @@ void mcu_msg_destroy_string(mcu_msg_string_t *str);
  * @param raw_str 
  * @param id 
  * @param len 
- * @return mcu_msg_t 
+ * @return mmsg_t 
  */
-mcu_msg_t mcu_msg_get(char *raw_str, char *id, mcu_msg_size_t len);
+mmsg_t mmsg_get(char *raw_str, char *id, mmsg_size_t len);
 
 /**
  * @brief 
  * 
  * @param msg 
  * @param id 
- * @return mcu_msg_obj_t 
+ * @return mmsg_obj_t 
  */
-mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id);
+mmsg_obj_t mmsg_parser_get_obj(mmsg_t msg, char *id);
 
 
 /**
@@ -147,9 +150,9 @@ mcu_msg_obj_t mcu_msg_parser_get_obj(mcu_msg_t msg, char *id);
  * 
  * @param msg 
  * @param cmd_id 
- * @return mcu_msg_cmd_t 
+ * @return mmsg_cmd_t 
  */
-mcu_msg_cmd_t mcu_msg_parser_get_cmd(mcu_msg_t msg, char *cmd_id);
+mmsg_cmd_t mmsg_parser_get_cmd(mmsg_t msg, char *cmd_id);
 
 
 /**
@@ -160,7 +163,7 @@ mcu_msg_cmd_t mcu_msg_parser_get_cmd(mcu_msg_t msg, char *cmd_id);
  * @param key 
  * @return int8_t 
  */
-int8_t mcu_msg_parser_get_int(int *res, mcu_msg_obj_t obj, char *key);
+int8_t mmsg_parser_get_int(int *res, mmsg_obj_t obj, char *key);
 
 
 /**
@@ -171,7 +174,7 @@ int8_t mcu_msg_parser_get_int(int *res, mcu_msg_obj_t obj, char *key);
  * @param key 
  * @return int8_t 
  */
-int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key);
+int8_t mmsg_parser_get_float(float *res_val, mmsg_obj_t obj, char *key);
 
 
 /**
@@ -179,24 +182,40 @@ int8_t mcu_msg_parser_get_float(float *res_val, mcu_msg_obj_t obj, char *key);
  * 
  * @param obj 
  * @param key 
- * @return mcu_msg_string_t 
+ * @return mmsg_string_t 
  */
-mcu_msg_string_t mcu_msg_parser_get_string(mcu_msg_obj_t obj, char *key);
+mmsg_string_t mmsg_parser_get_string(mmsg_obj_t obj, char *key);
 
 
 /**
  * @brief 
  * 
  * @param print 
- * @return mcu_msg_string_hnd_t 
+ * @return mmsg_string_hnd_t 
  */
-mcu_msg_string_hnd_t mcu_msg_string_hnd_create(void (*print)(mcu_msg_string_t));
+mmsg_string_hnd_t mmsg_string_hnd_create(int (*putc)(char));
 
 #if MCU_MSG_USE_WRAPPER
-void mcu_msg_wrapper_init_obj_queues(mcu_msg_obj_wrap_t *obj);
-void mcu_msg_wrapper_add_string_to_obj(mcu_msg_obj_wrap_t *obj, mcu_msg_string_wrap_t *str);
-// void mcu_msg_wrapper_add_int_to_obj(mcu_msg_obj_t *obj, mcu_msg_int_t *int_valp);
-// void mcu_msg_wrapper_add_float_to_obj(mcu_msg_obj_t *obj, mcu_msg_float_t *float_valp);
+
+void                mmsg_wrap_destroy(mmsg_wrap_t *msg);
+void                mmsg_wrap_destroy_obj(mmsg_obj_wrap_t *obj);
+void                mmsg_wrap_destroy_str(mmsg_string_wrap_t *str);
+void                mmsg_wrap_destroy_int(mmsg_int_wrap_t *i);
+void                mmsg_wrap_destroy_float(mmsg_float_wrap_t *f);
+mmsg_wrap_hnd_t     mmsg_wrapper_hnd_create(int (*putc)(char));
+mmsg_wrap_t         mmsg_wrapper_init_msg(char *msg_id);
+mmsg_cmd_wrap_t     mmsg_wrapper_init_cmd(char *cmd);
+mmsg_obj_wrap_t     mmsg_wrapper_init_obj(char *obj_id);
+mmsg_string_wrap_t  mmsg_wrapper_init_string(char *id, char *content);
+mmsg_int_wrap_t     mmsg_wrapper_init_int(char *id, int val);
+mmsg_float_wrap_t   mmsg_wrapper_init_float(char *id, float val, uint8_t prec);
+void                mmsg_wrapper_add_string_to_obj(mmsg_obj_wrap_t *obj, mmsg_string_wrap_t *str);
+void                mmsg_wrapper_add_int_to_obj(mmsg_obj_wrap_t *obj, mmsg_int_wrap_t *int_val);
+void                mmsg_wrapper_add_float_to_obj(mmsg_obj_wrap_t *obj, mmsg_float_wrap_t *float_val);
+void                mmsg_wrapper_add_object_to_msg(mmsg_wrap_t *msg, mmsg_obj_wrap_t *obj);
+void                mmsg_wrapper_add_cmd_to_msg(mmsg_wrap_t *msg, mmsg_cmd_wrap_t *cmd);
+
+
 #endif
 
 
