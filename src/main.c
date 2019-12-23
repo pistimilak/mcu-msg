@@ -214,6 +214,22 @@ int main()
     printf("---------------\n\n");
     wrapper_hnd.print(msg_wrap);
     printf("\n\n");
+
+#if MCU_MSG_USE_BUFFERING
+    char buff[1000] = {0};
+    msg_size_t freespc; // free space in buffer
+    msg_str_buff_t sbuff = msg_init_str_buff(buff, 1000);
+    
+    freespc = wrapper_hnd.print_to_buff(&sbuff, msg_wrap);
+    printf("Wrapped message (buffered, free space: %d)\n", freespc);
+    freespc = wrapper_hnd.print_to_buff(&sbuff, msg_wrap);
+    printf("Wrapped message (buffered again, free space: %d)\n", freespc);
+    
+    printf("\n\n");
+    printf("Buffer content:\n");
+    printf("%s\n\n", buff);
+#endif
+    printf("\n\n");
 #endif
 
     end = clock();

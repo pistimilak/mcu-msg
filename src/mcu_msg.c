@@ -43,13 +43,24 @@ static void             __msg_print_float(float f, uint8_t prec);
 static void             __msg_print_str(msg_str_t str);
 static inline char      __define_qmark(msg_str_t str);
 
-#if MCU_MSG_USE_WRAPPER
-static inline void      __msg_wrapper_print_obj(msg_wrap_obj_t obj);
-static inline void      __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd);
-static void             __msg_wrapper_print_msg(msg_wrap_t msg);
-static char*            __msg_wrapper_print_msg_to_buff(msg_wrap_t msg, char *buff, msg_size_t buf_size);
+#if MCU_MSG_USE_BUFFERING
+static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c);
+static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i);
+static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec);
+static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str);
 #endif
 
+#if MCU_MSG_USE_WRAPPER
+static void             __msg_wrapper_print_obj(msg_wrap_obj_t obj);
+static inline void      __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd);
+static void             __msg_wrapper_print_msg(msg_wrap_t msg);
+#endif
+
+#if (MCU_MSG_USE_WRAPPER && MCU_MSG_USE_BUFFERING)
+static msg_size_t           __msg_wrapper_print_obj_to_buff(msg_str_buff_t *buff, msg_wrap_obj_t obj);
+static inline msg_size_t    __msg_wrapper_print_cmd_to_buff(msg_str_buff_t *buff, msg_wrap_cmd_t cmd);
+static msg_size_t           __msg_wrapper_print_msg_to_buff(msg_str_buff_t *buff, msg_wrap_t msg);
+#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //                                      Parser functions                                   //
@@ -77,9 +88,14 @@ void msg_destroy_obj(msg_obj_t *obj)
     msg_destroy_string(&obj->content);
 }
 
+/*destroy cmd*/
+void msg_destroy_cmd(msg_cmd_t *cmd)
+{
+    msg_destroy_string(&cmd->cmd);
+}
+
 msg_str_t msg_init_string(char *str)
 {
-    // printf(">>\n");
     msg_str_t res;
     res.s = str;
     res.len = __str_len(res.s);
@@ -579,6 +595,101 @@ static inline char __define_qmark(msg_str_t str)
     return '"'; // default
 }
 
+#if MCU_MSG_USE_BUFFERING
+
+void msg_destroy_str_buff(msg_str_buff_t *buff)
+{
+    msg_destroy_string(&buff->buff);
+    buff->p = NULL;
+}
+
+msg_str_buff_t msg_init_str_buff(char *buff, msg_size_t buff_size)
+{
+    msg_str_buff_t b;
+    
+    b.buff.s = buff;
+    b.p = buff;
+    // if(buff_size < 1) {
+    //     msg_destroy_str_buff(&b);   // retrun with an empty buff
+    // } else {
+    //     b.buff.len = buff_size - 1; // terminate with 0 necessary at the end of message
+    // }
+    b.buff.len = buff_size;
+    return b;
+}
+
+static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c)
+{
+    if((buff->p - buff->buff.s) >= buff->buff.len) // return null if position is out of buffer
+        return 0;
+    *buff->p = c;
+    buff->p++;
+    return buff->buff.len - (buff->p - buff->buff.s); // return with the empty spaces
+}
+
+
+static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i)
+{
+    int8_t sign = i < 0 ? -1 : 1;
+    long div;
+    char dig;
+
+    if(!i) {
+        __msg_putc_to_buff(buff, '0');
+        return buff->p - buff->buff.s;
+    }
+
+    switch(sign) {
+        case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc_to_buff(buff, '-'); break;
+        default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
+    }
+    while(div) {
+        if(sign == -1 ? (i > div) : (i < div)) {
+            div /= 10;
+            continue;
+        }
+        dig = '0' + ((i / div) % 10);
+        __msg_putc_to_buff(buff, dig);
+        div /= 10;
+    }
+
+    return buff->buff.len - (buff->p - buff->buff.s);
+}
+
+static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec)
+{
+    int i_part = f;
+    float f_part = f - i_part;
+    long mul = f < 0.0 ? -10 : 10;
+    uint8_t j;
+    char dig;
+
+
+    if(!i_part) {
+        if(mul < 0) __msg_putc_to_buff(buff, '-');
+        __msg_putc_to_buff(buff, '0');
+    } else {
+        __msg_print_int_to_buff(buff, i_part);  
+    }
+      
+    __msg_putc_to_buff(buff, '.');
+    for(j = 0; j < prec; mul *= 10, j++) {
+        dig = '0' + ((long)(f_part * mul) % 10);
+        __msg_putc_to_buff(buff, dig);
+    }
+    return buff->buff.len - (buff->p - buff->buff.s);
+}
+
+static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str)
+{
+    msg_size_t i;
+    for(i = 0; i < str.len; i++) {
+        if(!__msg_putc_to_buff(buff, *(str.s + i))) return 0;
+    }
+    return buff->buff.len - (buff->p - buff->buff.s);
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 //                                     Wrapper functions                                   //
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -589,27 +700,38 @@ msg_wrap_hnd_t msg_wrapper_hnd_create(int (*putc)(char))
     msg_wrap_hnd_t hnd;
     __msg_putc = putc; // init putchar
     hnd.print = __msg_wrapper_print_msg;
-    hnd.print_to_buff = __msg_wrapper_print_msg_to_buff;
     hnd.print_obj = __msg_wrapper_print_obj;
     hnd.print_cmd = __msg_wrapper_print_cmd;
+#if MCU_MSG_USE_BUFFERING
+    hnd.print_to_buff = __msg_wrapper_print_msg_to_buff;
+    // hnd.print_obj_to_buff = __msg_wrapper_print_obj_to_buff;
+    // hnd.print_cmd_to_buff = __msg_wrapper_print_cmd_to_buff;
+#endif
     return hnd;
 }
 
 #define __print_key_equ(key_str)        __msg_putc(__CTRL_KEY_FLAG); \
-                                        __msg_print_str(key_str);   \
+                                        __msg_print_str(key_str);    \
                                         __msg_putc(__CTRL_KEY_EQU)
 
+#define __print_msg_start(msg)          __msg_putc(__CTRL_MSG_FLAG); \
+                                        __msg_print_str(msg.id);     \
+                                        __msg_putc(__CTRL_START_MSG)
 
-static inline void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
+
+#define __print_obj_start(obj)          __msg_putc(__CTRL_OBJ_FLAG);  \
+                                        __msg_print_str(obj.id);      \
+                                        __msg_putc(__CTRL_START_OBJ)  
+
+static void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
 {
     msg_wrap_str_t *sp;
     msg_wrap_int_t *ip;
     msg_wrap_float_t *fp;
-    
-    __msg_putc(__CTRL_OBJ_FLAG);
-    __msg_print_str(obj.id);
-    __msg_putc(__CTRL_START_OBJ);
     char qmark;
+
+    __print_obj_start(obj);
+    
 
     // print integers
     for(ip = obj.int_queue; ip != NULL; ip = ip->next) {
@@ -640,6 +762,8 @@ static inline void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
     __msg_putc(__CTRL_STOP_OBJ);
 }
 
+
+
 static inline void __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd)
 {
     if(cmd.cmd.s != NULL) {
@@ -650,6 +774,7 @@ static inline void __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd)
 }
 
 
+
 static void __msg_wrapper_print_msg(msg_wrap_t msg)
 {
     msg_wrap_obj_t *pobj;
@@ -657,9 +782,7 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
 
     if(!__msg_putc || msg.id.s == NULL) // return if putchar not implemented
         return;
-    __msg_putc(__CTRL_MSG_FLAG);
-    __msg_print_str(msg.id);
-    __msg_putc(__CTRL_START_MSG);
+    __print_msg_start(msg);
     
     pcmd = msg.cmd_queue;
     while(pcmd != NULL) {
@@ -675,16 +798,13 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
 }
 
 
-static char* __msg_wrapper_print_msg_to_buff(msg_wrap_t msg, char *buff, msg_size_t buf_size)
-{
-    return NULL;
-}
+
 
 void msg_wrap_destroy(msg_wrap_t *msg)
 {
     msg_destroy_string(&msg->id);
-    msg->cmd_queue=NULL;
-    msg->obj_queue=NULL;
+    msg->cmd_queue = NULL;
+    msg->obj_queue = NULL;
 }
 
 void msg_wrap_destroy_obj(msg_wrap_obj_t *obj)
@@ -694,6 +814,12 @@ void msg_wrap_destroy_obj(msg_wrap_obj_t *obj)
     obj->float_queue = NULL;
     obj->string_queue = NULL;
     obj->next = NULL;
+}
+
+void msg_wrap_destroy_cmd(msg_wrap_cmd_t *cmd)
+{
+    msg_destroy_string(&cmd->cmd);
+    cmd->next = NULL;
 }
 
 void msg_wrap_destroy_str(msg_wrap_str_t *str)
@@ -944,5 +1070,90 @@ void msg_wrapper_rm_cmd_from_msg(msg_wrap_t *msg, msg_wrap_cmd_t *cmd)
     }    
 }
 
+#endif
 
+
+/*Use buffering in wrapper features*/
+#if (MCU_MSG_USE_WRAPPER && MCU_MSG_USE_BUFFERING)
+#define __print_key_equ_to_buff(buffp,key_str) __msg_putc_to_buff(buffp, __CTRL_KEY_FLAG); \
+                                               __msg_print_str_to_buff(buffp, key_str);    \
+                                               __msg_putc_to_buff(buffp, __CTRL_KEY_EQU)
+
+#define __print_msg_start_to_buff(buffp,msg)   __msg_putc_to_buff(buffp, __CTRL_MSG_FLAG); \
+                                               __msg_print_str_to_buff(buffp, msg.id);     \
+                                               __msg_putc_to_buff(buffp, __CTRL_START_MSG)
+
+
+#define __print_obj_start_to_buff(buffp,obj)   __msg_putc_to_buff(buffp, __CTRL_OBJ_FLAG);  \
+                                               __msg_print_str_to_buff(buffp, obj.id);      \
+                                               __msg_putc_to_buff(buffp, __CTRL_START_OBJ)
+
+static msg_size_t __msg_wrapper_print_obj_to_buff(msg_str_buff_t *buff, msg_wrap_obj_t obj)
+{
+    msg_wrap_str_t *sp;
+    msg_wrap_int_t *ip;
+    msg_wrap_float_t *fp;
+    char qmark;
+
+    __print_obj_start_to_buff(buff, obj);
+
+    // print integers
+    for(ip = obj.int_queue; ip != NULL; ip = ip->next) {
+        __print_key_equ_to_buff(buff, ip->id);
+        __msg_print_int_to_buff(buff, ip->val);
+        if(ip->next != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
+    }
+
+    // print floats
+    if(obj.float_queue != NULL && obj.int_queue != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
+    for(fp = obj.float_queue; fp != NULL; fp = fp->next) {
+        __print_key_equ_to_buff(buff, fp->id);
+        __msg_print_float_to_buff(buff, fp->val, fp->prec);
+        if(fp->next != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
+    }
+
+    // print strings
+    if(obj.string_queue != NULL && obj.float_queue != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
+    for(sp = obj.string_queue; sp != NULL; sp = sp->next) {
+        __print_key_equ_to_buff(buff, sp->id);
+        qmark = __define_qmark(sp->content);
+        __msg_putc_to_buff(buff, qmark);
+        __msg_print_str_to_buff(buff, sp->content);
+        __msg_putc_to_buff(buff, qmark);
+        if(sp->next != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
+    }
+
+    __msg_putc_to_buff(buff, __CTRL_STOP_OBJ);
+    return buff->buff.len - (buff->p - buff->buff.s); //return free space in byte
+}
+
+static inline msg_size_t __msg_wrapper_print_cmd_to_buff(msg_str_buff_t *buff, msg_wrap_cmd_t cmd)
+{
+    __msg_putc_to_buff(buff, __CTRL_CMD_START_FLAG);
+    __msg_print_str_to_buff(buff, cmd.cmd);
+    __msg_putc_to_buff(buff, __CTRL_CMD_STOP_FLAG);
+    return buff->buff.len - (buff->p - buff->buff.s); //return free space in byte
+}
+
+static msg_size_t __msg_wrapper_print_msg_to_buff(msg_str_buff_t *buff, msg_wrap_t msg)
+{
+    msg_wrap_obj_t *pobj;
+    msg_wrap_cmd_t *pcmd;
+
+    __print_msg_start_to_buff(buff, msg);
+    
+    pcmd = msg.cmd_queue;
+    while(pcmd != NULL) {
+        __msg_wrapper_print_cmd_to_buff(buff, *pcmd);
+        pcmd = pcmd->next;   
+    }
+    pobj = msg.obj_queue;
+    while(pobj != NULL) {
+        __msg_wrapper_print_obj_to_buff(buff, *pobj);
+        pobj = pobj->next;   
+    }
+    __msg_putc_to_buff(buff, __CTRL_STOP_MSG);
+
+    return buff->buff.len - (buff->p - buff->buff.s); //return free space in byte
+}
 #endif
