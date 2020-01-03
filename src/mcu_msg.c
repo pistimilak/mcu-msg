@@ -36,18 +36,21 @@ static inline uint8_t   __is_p_in_str(msg_str_t str, char *p);
 static char*            __skip_internal_str(char *start);
 static msg_str_t        __find_keyword(msg_str_t str, char *keyword, char flagc, char stopc);
 static msg_str_t        __find_val(msg_obj_t obj, char *key);
-static void             __msg_str_copy_to_chr_arr(char *dest, msg_str_t source);
-static void             __msg_str_copy(msg_str_t dest, msg_str_t source);
+// static void             __msg_str_copy_to_chr_arr(char *dest, msg_str_t source);
+// static void             __msg_str_copy(msg_str_t dest, msg_str_t source);
+static void             __msg_print(msg_t msg);
 static void             __msg_print_int(int i);
 static void             __msg_print_float(float f, uint8_t prec);
 static void             __msg_print_str(msg_str_t str);
 static inline char      __define_qmark(msg_str_t str);
 
+
+
 #if MCU_MSG_USE_BUFFERING
-static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c);
-static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i);
-static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec);
-static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str);
+// static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c);
+// static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i);
+// static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec);
+// static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str);
 #endif
 
 #if MCU_MSG_USE_WRAPPER
@@ -484,11 +487,11 @@ msg_str_t msg_parser_get_string(msg_obj_t obj, char *key)
  * @param dest destination char array
  * @param source source string type
  */
-static void __msg_str_copy_to_chr_arr(char *dest, msg_str_t source)
-{
-    msg_size_t i;
-    for(i = 0; i < source.len; *(dest + i) = *(source.s + i), i++);
-}
+// static void __msg_str_copy_to_chr_arr(char *dest, msg_str_t source)
+// {
+//     msg_size_t i;
+//     for(i = 0; i < source.len; *(dest + i) = *(source.s + i), i++);
+// }
 
 /**
  * @brief Default string copy to string type
@@ -496,65 +499,111 @@ static void __msg_str_copy_to_chr_arr(char *dest, msg_str_t source)
  * @param dest destination string type
  * @param source source string type
  */
-static void __msg_str_copy(msg_str_t dest, msg_str_t source)
-{
-    msg_size_t i;
-    for(i = 0, dest.len = source.len; i < source.len; *(dest.s + i) = *(source.s + i), i++);
-}
+// static void __msg_str_copy(msg_str_t dest, msg_str_t source)
+// {
+//     msg_size_t i;
+//     for(i = 0, dest.len = source.len; i < source.len; *(dest.s + i) = *(source.s + i), i++);
+// }
+
+
+
+// static void __msg_print_int(int i)
+// {
+//     int8_t sign = i < 0 ? -1 : 1;
+//     //                     int32->2147483647  int16:32767
+//     long div;
+//     char dig;
+
+//     if(!__msg_putc) //if function pointer is NULL, return
+//         return;
+//     if(!i) {
+//         __msg_putc('0');
+//         return;
+//     }
+
+//     switch(sign) {
+//         case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc('-'); break;
+//         default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
+//     }
+//     while(div) {
+//         if(sign == -1 ? (i > div) : (i < div)) {
+//             div /= 10;
+//             continue;
+//         }
+//         dig = '0' + ((i / div) % 10);
+//         __msg_putc(dig);
+//         div /= 10;
+//     }
+    
+// }
+
 
 static void __msg_print_int(int i)
 {
-    int8_t sign = i < 0 ? -1 : 1;
-    //                     int32->2147483647  int16:32767
-    long div;
-    char dig;
+    // int8_t sign = i < 0 ? -1: 1;
+    unsigned val = i < 0 ? ~i + 1 : i;
+                                  // 4294967295   65535
+    unsigned div = sizeof(int) > 2 ? 1000000000UL : 10000UL;
+    uint8_t dig;
+    uint8_t first_dig = 0;
 
-    if(!__msg_putc) //if function pointer is NULL, return
-        return;
     if(!i) {
         __msg_putc('0');
         return;
     }
-
-    switch(sign) {
-        case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc('-'); break;
-        default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
-    }
+    if(i < 0) __msg_putc('-');
     while(div) {
-        if(sign == -1 ? (i > div) : (i < div)) {
-            div /= 10;
-            continue;
+        dig = 0;
+        while(val >= div) {
+            val -= div;
+            dig += 1;
         }
-        dig = '0' + ((i / div) % 10);
-        __msg_putc(dig);
         div /= 10;
+        if(!first_dig && dig) {
+            first_dig = 1;
+        }
+        if(first_dig) __msg_putc('0' + dig);
     }
     
 }
 
+// static void __msg_print_float(float f, uint8_t prec)
+// {
+//     int i_part = f;
+//     float f_part = f - i_part;
+//     unsigned f_part_int;
+//     long mul = f < 0.0 ? -10 : 10;
+//     uint8_t j;
+//     char dig;
+//     if(!__msg_putc) //if function pointer is NULL, return
+//         return;
+
+//     if(!i_part) {
+//         if(i_part < 0) __msg_putc('-');
+//         __msg_putc('0');
+//     } else {
+//         __msg_print_int(i_part);  
+//     }
+      
+//     __msg_putc('.');
+//     for(j = 0; j < prec; mul *= 10, j++) {
+//         dig = '0' + ((long)(f_part * mul) % 10);
+//         __msg_putc(dig);
+//     }
+// }
+
 static void __msg_print_float(float f, uint8_t prec)
 {
-    int i_part = f;
-    float f_part = f - i_part;
-    long mul = f < 0.0 ? -10 : 10;
+    int i_part = (int)f;
+    float f_part = f < 0 ? (f - (float)i_part) * -1  : (f - (float)i_part);
+    unsigned mul = 1;
     uint8_t j;
-    char dig;
-    if(!__msg_putc) //if function pointer is NULL, return
-        return;
-
-    if(!i_part) {
-        if(mul < 0) __msg_putc('-');
-        __msg_putc('0');
-    } else {
-        __msg_print_int(i_part);  
-    }
-      
+    for(j = 0; j < prec; j++ ) mul *= 10;
+    __msg_print_int(i_part);
     __msg_putc('.');
-    for(j = 0; j < prec; mul *= 10, j++) {
-        dig = '0' + ((long)(f_part * mul) % 10);
-        __msg_putc(dig);
-    }
+    __msg_print_int((unsigned)(f_part * mul));
 }
+
 
 static void __msg_print_str(msg_str_t str)
 {
@@ -565,19 +614,27 @@ static void __msg_print_str(msg_str_t str)
     for(i = 0; i < str.len; __msg_putc(*(str.s + i)), i++);
 }
 
+static void __msg_print(msg_t msg)
+{
+    __msg_print_str(msg.content);
+}
+
 /**
  * @brief Create string handler and set the basic functions
  * 
  * @param putc expected print function, set to NULL if you don't need the print feature
  * @return msg_string_hnd_t handler
  */
-msg_string_hnd_t msg_string_hnd_create(int (*putc)(char))
+msg_hnd_t msg_hnd_create(int (*putc)(char))
 {
-    msg_string_hnd_t hnd;
-    __msg_putc = putc;            // init putchar
-    hnd.copy_to_chr_arr = __msg_str_copy_to_chr_arr;
-    hnd.copy = __msg_str_copy;
-    hnd.print = __msg_print_str;
+    // TODO
+    msg_hnd_t hnd;
+    hnd.putc = __msg_putc = putc;            // init putchar
+    hnd.print_msg = __msg_print;
+    hnd.print_str = __msg_print_str;
+    hnd.print_int = __msg_print_int;
+    hnd.print_float = __msg_print_float;
+    hnd.print_wrapper_msg = __msg_wrapper_print_msg;
     return hnd;
 }
 
@@ -597,97 +654,109 @@ static inline char __define_qmark(msg_str_t str)
 
 #if MCU_MSG_USE_BUFFERING
 
-void msg_destroy_str_buff(msg_str_buff_t *buff)
-{
-    msg_destroy_string(&buff->buff);
-    buff->p = NULL;
-}
+// void msg_destroy_str_buff(msg_str_buff_t *buff)
+// {
+//     msg_destroy_string(&buff->buff);
+//     buff->p = NULL;
+// }
 
-msg_str_buff_t msg_init_str_buff(char *buff, msg_size_t buff_size)
-{
-    msg_str_buff_t b;
+// void msg_clear_str_buff(msg_str_buff_t *buff) {
+//     msg_size_t i;
+//     for(i = 0; i < buff->buff.len; *(buff->buff.s + i) = '0', i++); //fill with 0
+//     buff->p = buff->buff.s; // reset positon
+// }
+
+// void msg_reset_str_buff(msg_str_buff_t *buff)
+// {
+//     buff->p = buff->buff.s; // reset positon
+// }
+
+
+// msg_str_buff_t msg_init_str_buff(char *buff, msg_size_t buff_size)
+// {
+//     msg_str_buff_t b;
     
-    b.buff.s = buff;
-    b.p = buff;
-    // if(buff_size < 1) {
-    //     msg_destroy_str_buff(&b);   // retrun with an empty buff
-    // } else {
-    //     b.buff.len = buff_size - 1; // terminate with 0 necessary at the end of message
-    // }
-    b.buff.len = buff_size;
-    return b;
-}
+//     b.buff.s = buff;
+//     b.p = buff;
+//     // if(buff_size < 1) {
+//     //     msg_destroy_str_buff(&b);   // retrun with an empty buff
+//     // } else {
+//     //     b.buff.len = buff_size - 1; // terminate with 0 necessary at the end of message
+//     // }
+//     b.buff.len = buff_size;
+//     return b;
+// }
 
-static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c)
-{
-    if((buff->p - buff->buff.s) >= buff->buff.len) // return null if position is out of buffer
-        return 0;
-    *buff->p = c;
-    buff->p++;
-    return buff->buff.len - (buff->p - buff->buff.s); // return with the empty spaces
-}
-
-
-static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i)
-{
-    int8_t sign = i < 0 ? -1 : 1;
-    long div;
-    char dig;
-
-    if(!i) {
-        __msg_putc_to_buff(buff, '0');
-        return buff->p - buff->buff.s;
-    }
-
-    switch(sign) {
-        case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc_to_buff(buff, '-'); break;
-        default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
-    }
-    while(div) {
-        if(sign == -1 ? (i > div) : (i < div)) {
-            div /= 10;
-            continue;
-        }
-        dig = '0' + ((i / div) % 10);
-        __msg_putc_to_buff(buff, dig);
-        div /= 10;
-    }
-
-    return buff->buff.len - (buff->p - buff->buff.s);
-}
-
-static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec)
-{
-    int i_part = f;
-    float f_part = f - i_part;
-    long mul = f < 0.0 ? -10 : 10;
-    uint8_t j;
-    char dig;
+// static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c)
+// {
+//     if((buff->p - buff->buff.s) >= buff->buff.len) // return null if position is out of buffer
+//         return 0;
+//     *buff->p = c;
+//     buff->p++;
+//     return buff->buff.len - (buff->p - buff->buff.s); // return with the empty spaces
+// }
 
 
-    if(!i_part) {
-        if(mul < 0) __msg_putc_to_buff(buff, '-');
-        __msg_putc_to_buff(buff, '0');
-    } else {
-        __msg_print_int_to_buff(buff, i_part);  
-    }
+// static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i)
+// {
+//     int8_t sign = i < 0 ? -1 : 1;
+//     long div;
+//     char dig;
+
+//     if(!i) {
+//         __msg_putc_to_buff(buff, '0');
+//         return buff->p - buff->buff.s;
+//     }
+
+//     switch(sign) {
+//         case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc_to_buff(buff, '-'); break;
+//         default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
+//     }
+//     while(div) {
+//         if(sign == -1 ? (i > div) : (i < div)) {
+//             div /= 10;
+//             continue;
+//         }
+//         dig = '0' + ((i / div) % 10);
+//         __msg_putc_to_buff(buff, dig);
+//         div /= 10;
+//     }
+
+//     return buff->buff.len - (buff->p - buff->buff.s);
+// }
+
+// static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec)
+// {
+//     int i_part = f;
+//     float f_part = f - i_part;
+//     long mul = f < 0.0 ? -10 : 10;
+//     uint8_t j;
+//     char dig;
+
+
+//     if(!i_part) {
+//         if(mul < 0) __msg_putc_to_buff(buff, '-');
+//         __msg_putc_to_buff(buff, '0');
+//     } else {
+//         __msg_print_int_to_buff(buff, i_part);  
+//     }
       
-    __msg_putc_to_buff(buff, '.');
-    for(j = 0; j < prec; mul *= 10, j++) {
-        dig = '0' + ((long)(f_part * mul) % 10);
-        __msg_putc_to_buff(buff, dig);
-    }
-    return buff->buff.len - (buff->p - buff->buff.s);
-}
+//     __msg_putc_to_buff(buff, '.');
+//     for(j = 0; j < prec; mul *= 10, j++) {
+//         dig = '0' + ((long)(f_part * mul) % 10);
+//         __msg_putc_to_buff(buff, dig);
+//     }
+//     return buff->buff.len - (buff->p - buff->buff.s);
+// }
 
-static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str)
-{
-    msg_size_t i;
-    for(i = 0; i < str.len; i++) {
-        if(!__msg_putc_to_buff(buff, *(str.s + i))) return 0;
-    }
-    return buff->buff.len - (buff->p - buff->buff.s);
-}
+// static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str)
+// {
+//     msg_size_t i;
+//     for(i = 0; i < str.len; i++) {
+//         if(!__msg_putc_to_buff(buff, *(str.s + i))) return 0;
+//     }
+//     return buff->buff.len - (buff->p - buff->buff.s);
+// }
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -695,20 +764,20 @@ static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str)
 /////////////////////////////////////////////////////////////////////////////////////////////
 #if MCU_MSG_USE_WRAPPER
 
-msg_wrap_hnd_t msg_wrapper_hnd_create(int (*putc)(char))
-{
-    msg_wrap_hnd_t hnd;
-    __msg_putc = putc; // init putchar
-    hnd.print = __msg_wrapper_print_msg;
-    hnd.print_obj = __msg_wrapper_print_obj;
-    hnd.print_cmd = __msg_wrapper_print_cmd;
-#if MCU_MSG_USE_BUFFERING
-    hnd.print_to_buff = __msg_wrapper_print_msg_to_buff;
-    // hnd.print_obj_to_buff = __msg_wrapper_print_obj_to_buff;
-    // hnd.print_cmd_to_buff = __msg_wrapper_print_cmd_to_buff;
-#endif
-    return hnd;
-}
+// msg_wrap_hnd_t msg_wrapper_hnd_create(int (*putc)(char))
+// {
+//     msg_wrap_hnd_t hnd;
+//     __msg_putc = putc; // init putchar
+//     hnd.print = __msg_wrapper_print_msg;
+//     hnd.print_obj = __msg_wrapper_print_obj;
+//     hnd.print_cmd = __msg_wrapper_print_cmd;
+// #if MCU_MSG_USE_BUFFERING
+//     hnd.print_to_buff = __msg_wrapper_print_msg_to_buff;
+//     // hnd.print_obj_to_buff = __msg_wrapper_print_obj_to_buff;
+//     // hnd.print_cmd_to_buff = __msg_wrapper_print_cmd_to_buff;
+// #endif
+//     return hnd;
+// }
 
 #define __print_key_equ(key_str)        __msg_putc(__CTRL_KEY_FLAG); \
                                         __msg_print_str(key_str);    \
@@ -734,6 +803,7 @@ static void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
     
 
     // print integers
+    
     for(ip = obj.int_queue; ip != NULL; ip = ip->next) {
         __print_key_equ(ip->id);
         __msg_print_int(ip->val);
@@ -747,7 +817,6 @@ static void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
         __msg_print_float(fp->val, fp->prec);
         if(fp->next != NULL) __msg_putc(__CTRL_KEY_SEP);
     }
-
     // print strings
     if(obj.string_queue != NULL && obj.float_queue != NULL) __msg_putc(__CTRL_KEY_SEP);
     for(sp = obj.string_queue; sp != NULL; sp = sp->next) {
@@ -788,11 +857,12 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
     while(pcmd != NULL) {
         __msg_wrapper_print_cmd(*pcmd);
         pcmd = pcmd->next;   
+        printf(">>\n");
     }
     pobj = msg.obj_queue;
     while(pobj != NULL) {
         __msg_wrapper_print_obj(*pobj);
-        pobj = pobj->next;   
+        pobj = pobj->next;  
     }
     __msg_putc(__CTRL_STOP_MSG);
 }
