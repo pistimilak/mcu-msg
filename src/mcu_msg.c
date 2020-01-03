@@ -25,10 +25,27 @@
 #define __CTRL_CMD_STOP_FLAG      '>'
 
 
+/*typedef for internal string buffer*/
+typedef struct msg_str_buff {
+    msg_str_t  buff;
+    char*      p;               // pointer to the next element
+} msg_str_buff_t;
+
+
+static msg_str_buff_t __str_buff; // internal string buffer, must be intialized always
+static uint8_t __redir_outp_to_buff = 0; // redirect output to buffer indicator
+
 /*putchar implementation: must be implemented for printing to UART or other output*/
-static int (*__msg_putc)(char) = NULL; 
+static int (*__putc)(char) = NULL; 
 
 /*Static function declarations*/
+static void             __msg_enable_buff(void);
+static void             __msg_disable_buff(void);
+static void             __msg_init_str_buff(char *buff, msg_size_t buff_size);
+static void             __msg_reset_str_buff(char *buff, msg_size_t buff_size);
+static msg_size_t       __msg_putc_to_buff(char c);
+static void             __msg_putc(char c); //use std out or redirected string buff;
+
 static inline uint8_t   __is_ctrl_char(char c);
 static inline uint8_t   __is_whitespace(char c);
 static msg_size_t       __str_len(char *str);
@@ -36,33 +53,16 @@ static inline uint8_t   __is_p_in_str(msg_str_t str, char *p);
 static char*            __skip_internal_str(char *start);
 static msg_str_t        __find_keyword(msg_str_t str, char *keyword, char flagc, char stopc);
 static msg_str_t        __find_val(msg_obj_t obj, char *key);
-// static void             __msg_str_copy_to_chr_arr(char *dest, msg_str_t source);
-// static void             __msg_str_copy(msg_str_t dest, msg_str_t source);
 static void             __msg_print(msg_t msg);
 static void             __msg_print_int(int i);
 static void             __msg_print_float(float f, uint8_t prec);
 static void             __msg_print_str(msg_str_t str);
 static inline char      __define_qmark(msg_str_t str);
 
-
-
-#if MCU_MSG_USE_BUFFERING
-// static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c);
-// static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i);
-// static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec);
-// static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str);
-#endif
-
 #if MCU_MSG_USE_WRAPPER
 static void             __msg_wrapper_print_obj(msg_wrap_obj_t obj);
 static inline void      __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd);
 static void             __msg_wrapper_print_msg(msg_wrap_t msg);
-#endif
-
-#if (MCU_MSG_USE_WRAPPER && MCU_MSG_USE_BUFFERING)
-static msg_size_t           __msg_wrapper_print_obj_to_buff(msg_str_buff_t *buff, msg_wrap_obj_t obj);
-static inline msg_size_t    __msg_wrapper_print_cmd_to_buff(msg_str_buff_t *buff, msg_wrap_cmd_t cmd);
-static msg_size_t           __msg_wrapper_print_msg_to_buff(msg_str_buff_t *buff, msg_wrap_t msg);
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -481,62 +481,49 @@ msg_str_t msg_parser_get_string(msg_obj_t obj, char *key)
     return res;
 }
 
-/**
- * @brief Default string copy to char array
- * 
- * @param dest destination char array
- * @param source source string type
- */
-// static void __msg_str_copy_to_chr_arr(char *dest, msg_str_t source)
-// {
-//     msg_size_t i;
-//     for(i = 0; i < source.len; *(dest + i) = *(source.s + i), i++);
-// }
 
-/**
- * @brief Default string copy to string type
- * 
- * @param dest destination string type
- * @param source source string type
- */
-// static void __msg_str_copy(msg_str_t dest, msg_str_t source)
-// {
-//     msg_size_t i;
-//     for(i = 0, dest.len = source.len; i < source.len; *(dest.s + i) = *(source.s + i), i++);
-// }
+static void __msg_enable_buff(void)
+{
+    __redir_outp_to_buff = 1;
+}
 
+static void __msg_disable_buff(void)
+{
+    __redir_outp_to_buff = 0;
+}
 
+static void __msg_init_str_buff(char *buff, msg_size_t buff_size)
+{
+    __str_buff.buff.len = buff_size;
+    __str_buff.buff.s = buff;
+    __str_buff.p = __str_buff.buff.s;
+}
 
-// static void __msg_print_int(int i)
-// {
-//     int8_t sign = i < 0 ? -1 : 1;
-//     //                     int32->2147483647  int16:32767
-//     long div;
-//     char dig;
+static void __msg_reset_str_buff(char *buff, msg_size_t buff_size)
+{
+    __str_buff.p = __str_buff.buff.s; //reset pointer (set to the start position)
+}
 
-//     if(!__msg_putc) //if function pointer is NULL, return
-//         return;
-//     if(!i) {
-//         __msg_putc('0');
-//         return;
-//     }
+static msg_size_t __msg_putc_to_buff(char c)
+{
 
-//     switch(sign) {
-//         case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc('-'); break;
-//         default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
-//     }
-//     while(div) {
-//         if(sign == -1 ? (i > div) : (i < div)) {
-//             div /= 10;
-//             continue;
-//         }
-//         dig = '0' + ((i / div) % 10);
-//         __msg_putc(dig);
-//         div /= 10;
-//     }
-    
-// }
+    if(!__str_buff.buff.s || !__str_buff.buff.len) return 0;
 
+    if((__str_buff.p - __str_buff.buff.s) >= __str_buff.buff.len) // return null if position is out of buffer
+        return 0;
+    *__str_buff.p = c;
+    __str_buff.p++;
+    return __str_buff.buff.len - (__str_buff.p - __str_buff.buff.s); // return with the empty spaces
+}
+
+static void __msg_putc(char c)
+{
+    if (__redir_outp_to_buff) { // if output is redirected, use the internal string buffer
+        __msg_putc_to_buff(c);
+    } else {
+        __putc(c);
+    }
+}
 
 static void __msg_print_int(int i)
 {
@@ -566,31 +553,6 @@ static void __msg_print_int(int i)
     }
     
 }
-
-// static void __msg_print_float(float f, uint8_t prec)
-// {
-//     int i_part = f;
-//     float f_part = f - i_part;
-//     unsigned f_part_int;
-//     long mul = f < 0.0 ? -10 : 10;
-//     uint8_t j;
-//     char dig;
-//     if(!__msg_putc) //if function pointer is NULL, return
-//         return;
-
-//     if(!i_part) {
-//         if(i_part < 0) __msg_putc('-');
-//         __msg_putc('0');
-//     } else {
-//         __msg_print_int(i_part);  
-//     }
-      
-//     __msg_putc('.');
-//     for(j = 0; j < prec; mul *= 10, j++) {
-//         dig = '0' + ((long)(f_part * mul) % 10);
-//         __msg_putc(dig);
-//     }
-// }
 
 static void __msg_print_float(float f, uint8_t prec)
 {
@@ -627,14 +589,26 @@ static void __msg_print(msg_t msg)
  */
 msg_hnd_t msg_hnd_create(int (*putc)(char))
 {
-    // TODO
+
     msg_hnd_t hnd;
-    hnd.putc = __msg_putc = putc;            // init putchar
-    hnd.print_msg = __msg_print;
-    hnd.print_str = __msg_print_str;
-    hnd.print_int = __msg_print_int;
-    hnd.print_float = __msg_print_float;
+
+    // init string buff
+    __str_buff.p = __str_buff.buff.s = NULL;
+    __str_buff.buff.len = 0;
+
+    __putc = putc;            // init putchar
+
+    //features
+    hnd.print_msg         = __msg_print;
+    hnd.print_str         = __msg_print_str;
+    hnd.print_int         = __msg_print_int;
+    hnd.print_float       = __msg_print_float;
+    hnd.enable_buff       = __msg_enable_buff;
+    hnd.disable_buff      = __msg_disable_buff;
+    hnd.init_str_buff     = __msg_init_str_buff;
+    hnd.reset_str_buff    = __msg_reset_str_buff;
     hnd.print_wrapper_msg = __msg_wrapper_print_msg;
+    
     return hnd;
 }
 
@@ -652,132 +626,12 @@ static inline char __define_qmark(msg_str_t str)
     return '"'; // default
 }
 
-#if MCU_MSG_USE_BUFFERING
-
-// void msg_destroy_str_buff(msg_str_buff_t *buff)
-// {
-//     msg_destroy_string(&buff->buff);
-//     buff->p = NULL;
-// }
-
-// void msg_clear_str_buff(msg_str_buff_t *buff) {
-//     msg_size_t i;
-//     for(i = 0; i < buff->buff.len; *(buff->buff.s + i) = '0', i++); //fill with 0
-//     buff->p = buff->buff.s; // reset positon
-// }
-
-// void msg_reset_str_buff(msg_str_buff_t *buff)
-// {
-//     buff->p = buff->buff.s; // reset positon
-// }
-
-
-// msg_str_buff_t msg_init_str_buff(char *buff, msg_size_t buff_size)
-// {
-//     msg_str_buff_t b;
-    
-//     b.buff.s = buff;
-//     b.p = buff;
-//     // if(buff_size < 1) {
-//     //     msg_destroy_str_buff(&b);   // retrun with an empty buff
-//     // } else {
-//     //     b.buff.len = buff_size - 1; // terminate with 0 necessary at the end of message
-//     // }
-//     b.buff.len = buff_size;
-//     return b;
-// }
-
-// static msg_size_t __msg_putc_to_buff(msg_str_buff_t *buff, char c)
-// {
-//     if((buff->p - buff->buff.s) >= buff->buff.len) // return null if position is out of buffer
-//         return 0;
-//     *buff->p = c;
-//     buff->p++;
-//     return buff->buff.len - (buff->p - buff->buff.s); // return with the empty spaces
-// }
-
-
-// static msg_size_t __msg_print_int_to_buff(msg_str_buff_t *buff, int i)
-// {
-//     int8_t sign = i < 0 ? -1 : 1;
-//     long div;
-//     char dig;
-
-//     if(!i) {
-//         __msg_putc_to_buff(buff, '0');
-//         return buff->p - buff->buff.s;
-//     }
-
-//     switch(sign) {
-//         case -1: div = sizeof(int) >= 4 ? -1000000000L : -10000L; __msg_putc_to_buff(buff, '-'); break;
-//         default: div = sizeof(int) >= 4 ?  1000000000L :  10000L; break;
-//     }
-//     while(div) {
-//         if(sign == -1 ? (i > div) : (i < div)) {
-//             div /= 10;
-//             continue;
-//         }
-//         dig = '0' + ((i / div) % 10);
-//         __msg_putc_to_buff(buff, dig);
-//         div /= 10;
-//     }
-
-//     return buff->buff.len - (buff->p - buff->buff.s);
-// }
-
-// static msg_size_t __msg_print_float_to_buff(msg_str_buff_t *buff, float f, uint8_t prec)
-// {
-//     int i_part = f;
-//     float f_part = f - i_part;
-//     long mul = f < 0.0 ? -10 : 10;
-//     uint8_t j;
-//     char dig;
-
-
-//     if(!i_part) {
-//         if(mul < 0) __msg_putc_to_buff(buff, '-');
-//         __msg_putc_to_buff(buff, '0');
-//     } else {
-//         __msg_print_int_to_buff(buff, i_part);  
-//     }
-      
-//     __msg_putc_to_buff(buff, '.');
-//     for(j = 0; j < prec; mul *= 10, j++) {
-//         dig = '0' + ((long)(f_part * mul) % 10);
-//         __msg_putc_to_buff(buff, dig);
-//     }
-//     return buff->buff.len - (buff->p - buff->buff.s);
-// }
-
-// static msg_size_t __msg_print_str_to_buff(msg_str_buff_t *buff, msg_str_t str)
-// {
-//     msg_size_t i;
-//     for(i = 0; i < str.len; i++) {
-//         if(!__msg_putc_to_buff(buff, *(str.s + i))) return 0;
-//     }
-//     return buff->buff.len - (buff->p - buff->buff.s);
-// }
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //                                     Wrapper functions                                   //
 /////////////////////////////////////////////////////////////////////////////////////////////
 #if MCU_MSG_USE_WRAPPER
 
-// msg_wrap_hnd_t msg_wrapper_hnd_create(int (*putc)(char))
-// {
-//     msg_wrap_hnd_t hnd;
-//     __msg_putc = putc; // init putchar
-//     hnd.print = __msg_wrapper_print_msg;
-//     hnd.print_obj = __msg_wrapper_print_obj;
-//     hnd.print_cmd = __msg_wrapper_print_cmd;
-// #if MCU_MSG_USE_BUFFERING
-//     hnd.print_to_buff = __msg_wrapper_print_msg_to_buff;
-//     // hnd.print_obj_to_buff = __msg_wrapper_print_obj_to_buff;
-//     // hnd.print_cmd_to_buff = __msg_wrapper_print_cmd_to_buff;
-// #endif
-//     return hnd;
-// }
 
 #define __print_key_equ(key_str)        __msg_putc(__CTRL_KEY_FLAG); \
                                         __msg_print_str(key_str);    \
@@ -857,7 +711,6 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
     while(pcmd != NULL) {
         __msg_wrapper_print_cmd(*pcmd);
         pcmd = pcmd->next;   
-        printf(">>\n");
     }
     pobj = msg.obj_queue;
     while(pobj != NULL) {
@@ -1138,92 +991,5 @@ void msg_wrapper_rm_cmd_from_msg(msg_wrap_t *msg, msg_wrap_cmd_t *cmd)
         }
         prev = cp;
     }    
-}
-
-#endif
-
-
-/*Use buffering in wrapper features*/
-#if (MCU_MSG_USE_WRAPPER && MCU_MSG_USE_BUFFERING)
-#define __print_key_equ_to_buff(buffp,key_str) __msg_putc_to_buff(buffp, __CTRL_KEY_FLAG); \
-                                               __msg_print_str_to_buff(buffp, key_str);    \
-                                               __msg_putc_to_buff(buffp, __CTRL_KEY_EQU)
-
-#define __print_msg_start_to_buff(buffp,msg)   __msg_putc_to_buff(buffp, __CTRL_MSG_FLAG); \
-                                               __msg_print_str_to_buff(buffp, msg.id);     \
-                                               __msg_putc_to_buff(buffp, __CTRL_START_MSG)
-
-
-#define __print_obj_start_to_buff(buffp,obj)   __msg_putc_to_buff(buffp, __CTRL_OBJ_FLAG);  \
-                                               __msg_print_str_to_buff(buffp, obj.id);      \
-                                               __msg_putc_to_buff(buffp, __CTRL_START_OBJ)
-
-static msg_size_t __msg_wrapper_print_obj_to_buff(msg_str_buff_t *buff, msg_wrap_obj_t obj)
-{
-    msg_wrap_str_t *sp;
-    msg_wrap_int_t *ip;
-    msg_wrap_float_t *fp;
-    char qmark;
-
-    __print_obj_start_to_buff(buff, obj);
-
-    // print integers
-    for(ip = obj.int_queue; ip != NULL; ip = ip->next) {
-        __print_key_equ_to_buff(buff, ip->id);
-        __msg_print_int_to_buff(buff, ip->val);
-        if(ip->next != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
-    }
-
-    // print floats
-    if(obj.float_queue != NULL && obj.int_queue != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
-    for(fp = obj.float_queue; fp != NULL; fp = fp->next) {
-        __print_key_equ_to_buff(buff, fp->id);
-        __msg_print_float_to_buff(buff, fp->val, fp->prec);
-        if(fp->next != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
-    }
-
-    // print strings
-    if(obj.string_queue != NULL && obj.float_queue != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
-    for(sp = obj.string_queue; sp != NULL; sp = sp->next) {
-        __print_key_equ_to_buff(buff, sp->id);
-        qmark = __define_qmark(sp->content);
-        __msg_putc_to_buff(buff, qmark);
-        __msg_print_str_to_buff(buff, sp->content);
-        __msg_putc_to_buff(buff, qmark);
-        if(sp->next != NULL) __msg_putc_to_buff(buff, __CTRL_KEY_SEP);
-    }
-
-    __msg_putc_to_buff(buff, __CTRL_STOP_OBJ);
-    return buff->buff.len - (buff->p - buff->buff.s); //return free space in byte
-}
-
-static inline msg_size_t __msg_wrapper_print_cmd_to_buff(msg_str_buff_t *buff, msg_wrap_cmd_t cmd)
-{
-    __msg_putc_to_buff(buff, __CTRL_CMD_START_FLAG);
-    __msg_print_str_to_buff(buff, cmd.cmd);
-    __msg_putc_to_buff(buff, __CTRL_CMD_STOP_FLAG);
-    return buff->buff.len - (buff->p - buff->buff.s); //return free space in byte
-}
-
-static msg_size_t __msg_wrapper_print_msg_to_buff(msg_str_buff_t *buff, msg_wrap_t msg)
-{
-    msg_wrap_obj_t *pobj;
-    msg_wrap_cmd_t *pcmd;
-
-    __print_msg_start_to_buff(buff, msg);
-    
-    pcmd = msg.cmd_queue;
-    while(pcmd != NULL) {
-        __msg_wrapper_print_cmd_to_buff(buff, *pcmd);
-        pcmd = pcmd->next;   
-    }
-    pobj = msg.obj_queue;
-    while(pobj != NULL) {
-        __msg_wrapper_print_obj_to_buff(buff, *pobj);
-        pobj = pobj->next;   
-    }
-    __msg_putc_to_buff(buff, __CTRL_STOP_MSG);
-
-    return buff->buff.len - (buff->p - buff->buff.s); //return free space in byte
 }
 #endif

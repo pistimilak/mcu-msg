@@ -26,8 +26,4 @@ This keyword can enable the wrapper features
 */
 #define MCU_MSG_USE_WRAPPER         1
 
-/*
-Using buffer to store the strings
-*/
-#define MCU_MSG_USE_BUFFERING       0
 #endif

@@ -96,7 +96,7 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 
 # libraries
-LIBS =
+LIBS = -lpthread
 LIBDIR =
 LDFLAGS = 
 # default action: build all
@@ -114,13 +114,13 @@ OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
-	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
+	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@ $(LIBS)
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
-	$(AS) -c $(CFLAGS) $< -o $@
+	$(AS) -c $(CFLAGS) $< -o $@ $(LIBS)
 
 $(BIN_DIR)/$(TARGET): $(OBJECTS) Makefile
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+	$(CC) $(OBJECTS) $(LDFLAGS) -o $@ $(LIBS)
 	$(SZ) $@
 
 

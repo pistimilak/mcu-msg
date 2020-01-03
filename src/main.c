@@ -15,6 +15,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 #include "mcu_msg.h"
 
 /*string printer on i386*/
@@ -23,52 +24,29 @@ char test_str1[] = "#test_msg{<CMD1>\t\t @obj1($key11=-1123334567  ; $key12 = 's
 \r@obj2  ($key21 =   -1.123456789; $key22   = 'val22'; $key23 = 1000; $key24 = 12.34)<CMD_last>}";
 
 
-void print_int(int i , int (*__putchar)(char));
-void print_float(float f, uint8_t prec, int (*__putchar)(char));
+typedef struct {
+    char *buff;
+    msg_size_t buff_size;
+} thread_arg;
+
+
+
+pthread_mutex_t outp_lock;
+pthread_t thr_master, thr_slave;
+thread_arg common_buff;
+
+void *thread_mcu_master_fnc(void *arg);
+void *thread_mcu_slave_fnc(void *arg);
+
+
 
 int main()
 {
-    // print_int(-1000, putchar);
-    // putchar('\n');
-    // print_int(1000, putchar);
-    // putchar('\n');
-    // print_int(-128, putchar);
-    // putchar('\n');
-    // print_int(127, putchar);
-    // putchar('\n');
-    // print_int(256, putchar);
-    // putchar('\n');
-    // print_int(-32768, putchar);
-    // putchar('\n');
-    // print_int(32767, putchar);
-    // putchar('\n');
-    // print_int(65535, putchar);
-    // putchar('\n');
-    // print_int(-2147483648, putchar);
-    // putchar('\n');
-    // print_int(2147483647, putchar);
-    // putchar('\n');
-    // print_int(4294967295, putchar);
-    // putchar('\n');
-
-    // print_float(-1000.1234, 4,putchar);
-    // putchar('\n');
-    // print_float(3.1234, 4,putchar);
-    // putchar('\n');
-    // print_float(-123.56789, 6,putchar);
-    // putchar('\n');
-    // print_float(-456.12, 2,putchar);
-    // putchar('\n');
-    // print_float(67.128789, 4,putchar);
-    // putchar('\n');
-
-    // return;
     /*start the clock*/
     clock_t begin = clock();
     clock_t end;
     double exec_time = 0.0;
-
-
+    
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                 MCU-MSG Parser test                                       //
@@ -257,32 +235,51 @@ int main()
 
     printf("\n\n");
 
-#if MCU_MSG_USE_BUFFERING
     char buff[1000] = {0};
-    msg_size_t freespc; // free space in buffer
-    msg_str_buff_t sbuff = msg_init_str_buff(buff, 1000);
-    
-    freespc = wrapper_hnd.print_to_buff(&sbuff, msg_wrap);
-    printf("Wrapped message (buffered, free space: %d)\n", freespc);
-    freespc = wrapper_hnd.print_to_buff(&sbuff, msg_wrap);
-    printf("Wrapped message (buffered again, free space: %d)\n", freespc);
-    
+    hnd.init_str_buff(buff, 1000);
+    hnd.enable_buff();
+    hnd.print_wrapper_msg(msg_wrap);
+    printf("Wrapped message buffered\n");
+    hnd.print_wrapper_msg(msg_wrap);
+    printf("Wrapped message (buffered again)\n");
+    hnd.disable_buff();
+
     printf("\n\n");
     printf("Buffer content:\n");
     printf("%s\n\n", buff);
 
     printf("Reparsing '#wrapped_msg' '@wrapped_obj2'...\n\n");
     msg_reparsed = msg_get(buff, "wrapped_msg", 1000);
-    hnd.print(msg_reparsed.content); printf("\n\n");
+    hnd.print_msg(msg_reparsed); printf("\n\n");
     obj_reparsed = msg_parser_get_obj(msg_reparsed, "wrapped_obj2");
-    hnd.print(obj_reparsed.content); printf(" len: %d\n\n", obj_reparsed.content.len);
+    hnd.print_str(obj_reparsed.content); printf(" len: %d\n\n", obj_reparsed.content.len);
+
+
     msg_parser_get_float(&f_val, obj_reparsed, "f2");
     msg_parser_get_int(&i_val, obj_reparsed, "i1");
     printf("reparsed $i = %d $f2 = %f\n\n", i_val, f_val);
+    printf("\n\n");
+
+
+    /*Emulating master slave communication*/
+    
+    printf("Emulating a master - slave communaication:\n\n");
+    memset(buff, 0, 1000);
+    common_buff.buff = buff;
+    common_buff.buff_size = 1000;
+
+    if(pthread_mutex_init(&outp_lock, NULL)) return 0;
+    
+    pthread_create(&thr_master, NULL, thread_mcu_master_fnc, (void *) &common_buff);
+    pthread_create(&thr_slave, NULL, thread_mcu_slave_fnc, (void *) &common_buff);
+
+
+    pthread_join(thr_master, NULL);
+    pthread_join(thr_slave, NULL);
+    pthread_mutex_destroy(&outp_lock);
 #endif
 
     printf("\n\n");
-#endif
 
     end = clock();
     exec_time = (double)(end - begin) / CLOCKS_PER_SEC;
@@ -290,145 +287,148 @@ int main()
     return 0;
 }
 
-void print_int(int i , int (*__putchar)(char))
-{
-    int8_t sign = i < 0 ? -1: 1;
-    unsigned val = i < 0 ? ~i + 1 : i;
-                                  // 4294967295   65535
-    unsigned div = sizeof(int) > 2 ? 1000000000UL : 10000UL;
-    uint8_t dig;
-    uint8_t first_dig = 0;
-    if(sign == -1) __putchar('-');
-    while(div) {
-        dig = 0;
-        while(val >= div) {
-            val -= div;
-            dig += 1;
-        }
-        div /= 10;
-        if(!first_dig && dig) {
-            first_dig = 1;
-        }
-        if(first_dig) __putchar('0' + dig);
-    }
-}
 
-void print_float(float f, uint8_t prec, int (*__putchar)(char))
-{
-    int i_part = (int)f;
-    float f_part = f < 0 ? (f - (float)i_part) * -1  : (f - (float)i_part);
-    unsigned mul = 1;
-    uint8_t j;
-    for(j = 0; j < prec; j++ ) mul *= 10;
-    print_int(i_part, __putchar);
-    __putchar('.');
-    print_int((unsigned)(f_part * mul), __putchar);
-}
 
-/*
 void *thread_mcu_master_fnc(void *arg)
 {
-    
-    msg_str_buff_t *common_buff = (msg_str_buff_t *)arg;
-    msg_t answer;
-    msg_string_hnd_t hnd = msg_string_hnd_create(putchar);
-    msg_wrap_hnd_t wrap_hnd = msg_wrapper_hnd_create(putchar);
-    msg_wrap_t msg_fan_ctrl = msg_wrapper_init_msg("FAN");
-    msg_wrap_cmd_t cmd_fan1_enable = msg_wrapper_init_cmd("Fan1_Enabled");
-    msg_wrap_cmd_t cmd_fan2_enable = msg_wrapper_init_cmd("Fan2_Enabled");
-    msg_wrap_obj_t fan1 = msg_wrapper_init_obj("Fan1_Ctrl");
-    msg_wrap_int_t fan1_speed = msg_wrapper_init_int("Fan1_Speed", 540);
-    msg_wrap_float_t sens1_alarm = msg_wrapper_init_float("Sens1_AlarmLimit_C", 32.5, 2);
-    msg_wrap_obj_t fan2 = msg_wrapper_init_obj("Fan2_Ctrl");
-    msg_wrap_int_t fan2_speed = msg_wrapper_init_int("Fan2_Speed", 3021);
-    msg_wrap_float_t sens2_alarm = msg_wrapper_init_float("Sens2_AlarmLimit_C", 34.234, 2);
-    msg_wrapper_add_float_to_obj(&fan1, &sens1_alarm);
-    msg_wrapper_add_int_to_obj(&fan1, &fan1_speed);
-    msg_wrapper_add_float_to_obj(&fan2, &sens2_alarm);
-    msg_wrapper_add_int_to_obj(&fan2, &fan2_speed);
-    msg_wrapper_add_object_to_msg(&msg_fan_ctrl, &fan1);
-    msg_wrapper_add_cmd_to_msg(&msg_fan_ctrl, &cmd_fan1_enable);
-    msg_wrapper_add_object_to_msg(&msg_fan_ctrl, &fan2);
-    msg_wrapper_add_cmd_to_msg(&msg_fan_ctrl, &cmd_fan2_enable);
+        thread_arg *buff = (thread_arg *) arg;
+        msg_hnd_t hnd;
+        msg_t msg_in;
+        msg_obj_t temp_obj;
+        msg_wrap_t msg_out;
+        msg_wrap_cmd_t cmd;
 
-    msg_wrap_t msg_sys_ctrl = msg_wrapper_init_msg("SYS");;
-    msg_wrap_cmd_t cmd_lcd_clear = msg_wrapper_init_cmd("CMD_LCD_Clear");
-    msg_wrap_str_t lcd_default_str = msg_wrapper_init_string("LCD_Def", "Fan Control System");
+        float T1, T2;
 
+        /*Create handler*/
+        hnd = msg_hnd_create(putchar);
 
-    if(!wrap_hnd.print_to_buff(common_buff, msg_sys_ctrl)) printf("Buffer is full!");
-    if(!wrap_hnd.print_to_buff(common_buff, msg_fan_ctrl)) printf("Buffer is full!");
+        /*init common string buffer*/
+        hnd.init_str_buff(buff->buff, buff->buff_size);
+        
+        /*Init message wrappeper*/
+        msg_out = msg_wrapper_init_msg("MASTER_MSG");
+        
+        /*Init command*/
+        cmd = msg_wrapper_init_cmd("Get_Temp");
 
-    do {
-        answer = msg_get(common_buff->buff.s, "slave_answer", common_buff->buff.len);
-        usleep(100);
-    } while(!answer.content.len);
-    printf("[Master MCU] Salve sent answer:");
-    hnd.print(answer.content);
-    
-    fan1_speed.val = 4095;
-    fan2_speed.val = 2048;
-    sens1_alarm.val = 42.35;
-    msg_wrapper_rm_cmd_from_msg(&msg_fan_ctrl, &cmd_fan1_enable);
-    msg_wrapper_rm_cmd_from_msg(&msg_fan_ctrl, &cmd_fan2_enable);
-    
+        /*Add command to the message*/
+        msg_wrapper_add_cmd_to_msg(&msg_out, &cmd);
 
-    msg_reset_str_buff(common_buff); // reset writer pointer to start of buffer
-    if(!wrap_hnd.print_to_buff(common_buff, msg_sys_ctrl)) printf("Buffer is full!"); // send new 
-    
-    do {
-        answer = msg_get(common_buff->buff.s, "slave_answer", common_buff->buff.len);
-        usleep(100);
-    } while(!answer.content.len);
-    printf("[Master MCU] Salve sent answer:");
-    
+        /*Enable string buffer and send message*/
+        pthread_mutex_lock(&outp_lock); // LOCK
+        
+        hnd.enable_buff();
+        hnd.print_wrapper_msg(msg_out);
+        hnd.disable_buff();
+        
 
+        /*Print message to stdout*/
+        printf("Master >> ");
+        hnd.print_wrapper_msg(msg_out);
+        printf("\n");
 
-    return;
+        pthread_mutex_unlock(&outp_lock); // UNLOCK
+
+        /*Polling the common buffer*/
+        while(1) {
+            
+            msg_in = msg_get(buff->buff, "SLAVE_MSG", buff->buff_size);
+            if(msg_in.content.s != NULL) { // msg is arrived
+                
+                pthread_mutex_lock(&outp_lock); // LOCK
+                
+                temp_obj = msg_parser_get_obj(msg_in, "Temp");
+
+                if(temp_obj.content.s != NULL) {
+                    
+                    if(msg_parser_get_float(&T1, temp_obj, "T1") != -1) {
+                    printf("Master >> T1 = %f (from Slave)\n", T1);
+                    }
+                    if(msg_parser_get_float(&T2, temp_obj, "T2") != -1) {
+                        printf("Master >> T2 = %f (from Slave)\n", T2);
+                    }
+                    
+                }
+                
+                pthread_mutex_unlock(&outp_lock); // UNLOCK
+
+                break;
+            }
+            usleep(1000);
+        }
+
+        return;
 }
 
 
 
 void *thread_mcu_slave_fnc(void *arg)
 {
-    
-    msg_str_buff_t *common_buff = (msg_str_buff_t *)arg;
-    msg_t msg_from_master;
-    msg_obj_t fan1_obj;
-    msg_wrap_hnd_t hnd = msg_wrapper_hnd_create(putchar);
-    msg_wrap_t answ_msg = msg_wrapper_init_msg("slave_answer");
-    msg_wrap_cmd_t cmd_sys_done = msg_wrapper_init_cmd("SYSTEM_Tasks_Done");
+        thread_arg *buff = (thread_arg *) arg;
+        msg_hnd_t hnd;
+        msg_t msg_in;
+        msg_cmd_t cmd;
+        msg_wrap_obj_t temp_obj;
+        msg_wrap_t msg_out;
+        msg_wrap_float_t T1;
+        msg_wrap_float_t T2;
 
-    int fan1_speed;
-    float fan1_sens_lim;
+        /*Create handler*/
+        hnd = msg_hnd_create(putchar);
 
-    do {
-        msg_from_master = msg_get(common_buff->buff.s, "SYS", common_buff->buff.len);
-        usleep(100);
-    } while(!msg_from_master.content.len);
+        /*init common string buffer*/
+        hnd.init_str_buff(buff->buff, buff->buff_size);
 
-    do {
-        msg_from_master = msg_get(common_buff->buff.s, "FAN", common_buff->buff.len);
-        usleep(100);
-    } while(!msg_from_master.content.len);
+        /*Init message wrappeper*/
+        msg_out = msg_wrapper_init_msg("SLAVE_MSG");
 
-    msg_parser_get_obj(msg_from_master, "Fan1_Ctrl");
-    msg_parser_get_int(&fan1_speed, fan1_obj, "Fan1_Speed");
-    msg_parser_get_float(&fan1_sens_lim, fan1_obj, "Sens1_AlarmLimit_C");
-    msg_wrapper_add_cmd_to_msg(&answ_msg, &cmd_sys_done);
+        /*Init object*/
+        temp_obj = msg_wrapper_init_obj("Temp");
 
-    printf("[Slave MCU] fan1_speed = %d, fan1_sens_lim: %f\n", fan1_speed, fan1_sens_lim);
-    do {
-        msg_from_master = msg_get(common_buff->buff.s, "FAN", common_buff->buff.len);
-        usleep(100);
-    } while(!msg_from_master.content.len);
+        /*Init Temperatures*/
+        T1 = msg_wrapper_init_float("T1", 32.45, 2);
+        T2 = msg_wrapper_init_float("T2", 29.34, 2);
 
-    msg_parser_get_obj(msg_from_master, "Fan1_Ctrl");
-    msg_parser_get_int(&fan1_speed, fan1_obj, "Fan1_Speed");
-    msg_parser_get_float(&fan1_sens_lim, fan1_obj, "Sens1_AlarmLimit_C");
-    msg_wrapper_add_cmd_to_msg(&answ_msg, &cmd_sys_done);
-    printf("[Slave MCU] fan1_speed = %d, fan1_sens_lim: %f\n", fan1_speed, fan1_sens_lim);
+        msg_wrapper_add_float_to_obj(&temp_obj, &T1);
+        msg_wrapper_add_float_to_obj(&temp_obj, &T2);
+        msg_wrapper_add_object_to_msg(&msg_out, &temp_obj);
 
+        /*Polling the commong buffer*/
+        while(1) {
+            
+            
+            
+            msg_in = msg_get(buff->buff, "MASTER_MSG", buff->buff_size);
+            
+
+            if(msg_in.content.s != NULL) { //message arrived
+
+                
+
+                cmd = msg_parser_get_cmd(msg_in, "Get_Temp");
+                if(cmd.cmd.s != NULL) { //command arrived
+
+                    pthread_mutex_lock(&outp_lock); // LOCK
+
+                    /*Send to the master*/
+                    hnd.enable_buff();
+                    hnd.print_wrapper_msg(msg_out);
+                    hnd.disable_buff();
+
+                    /*Print to stdout*/
+                    printf("Slave: >> ");
+                    hnd.print_wrapper_msg(msg_out);
+                    printf("\n");
+                    
+                    pthread_mutex_unlock(&outp_lock); // UNLOCK
+
+                    break;
+                }
+            }
+            usleep(1000);
+        }
+
+        return;
 
 }
-*/
