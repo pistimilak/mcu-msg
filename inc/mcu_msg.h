@@ -1,3 +1,19 @@
+/**
+ * @file mcu_msg.h
+ * @author Istvan Milak (istvan.milak@gmail.com)
+ * @brief mcu-msg: simple parser and wrapper 
+ * for low level string based communication between microcontrollers
+ * It's designed for UART communication.
+ * The library dosen't use string.h functions and declared buffers, all of featerus are working with pointers
+ * to optimized for memory usage. Handler interface provides printing functions to standaer output
+ * with redirection to char array. Wrapper uses linked list which are modifyalbe
+ * @version 0.1
+ * @date 2020-01-04
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+
 #ifndef __MCU_MSG_PARSER__
 #define __MCU_MSG_PARSER__
 
@@ -24,14 +40,21 @@ typedef struct msg_str {
     msg_size_t len;       // string length
 } msg_str_t;
 
+/*Getting string ponter*/
+#define msg_str_p(str)        (str.s)
+
+
 
 typedef struct msg_cmd {
     msg_str_t cmd;       // cmd string
 } msg_cmd_t;
 
+/*Getting command*/
+#define msg_get_cmd_content(cmd)            msg_str_p(cmd.cmd)
 
 
-
+/*Get content for checking NULL pointers or content*/
+#define msg_get_content(mobj)           msg_str_p(mobj.content)
 
 typedef struct msg {
     msg_str_t id;        // id string
@@ -39,10 +62,15 @@ typedef struct msg {
 } msg_t;
 
 
+
+
 typedef struct msg_obj {
     msg_str_t id;        // id string
     msg_str_t content;   // content string
 } msg_obj_t;
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,15 +130,15 @@ typedef struct msg_wrap {
 
 
 typedef struct msg_hnd{
-    int  (*putc)              (char);                 // putchar implementation
-    void (*print_msg)         (msg_t);
-    void (*print_str)         (msg_str_t);
-    void (*print_int)         (int);
-    void (*print_float)       (float, uint8_t);
-    void (*enable_buff)       (void);
-    void (*disable_buff)      (void);
-    void (*init_str_buff)     (char *, msg_size_t);
-    void (*reset_str_buff)    (void);
+    int  (*putc)              (char c);                             // putchar interface
+    void (*print_msg)         (msg_t msg);                          // print message interface
+    void (*print_str)         (msg_str_t str);                      // print str interface
+    void (*print_int)         (int i);                              // print int interface
+    void (*print_float)       (float f, uint8_t prec);              // print float interface
+    void (*enable_buff)       (void);                               // enable buffering 
+    void (*disable_buff)      (void);                               // disable buffering
+    void (*init_str_buff)     (char *buff, msg_size_t buff_size);   // init string buffer
+    void (*reset_str_buff)    (void);                               // reset string buffer
  #if MCU_MSG_USE_WRAPPER
     void (*print_wrapper_msg) (msg_wrap_t);
  #endif
@@ -221,7 +249,18 @@ msg_hnd_t    msg_hnd_create (int (*putc)(char));
 /////////////////////////////////////////////////////////////////////////////////////////////
 #if MCU_MSG_USE_WRAPPER
 
+/**
+ * @brief destroy message wrapper
+ * 
+ * @param msg message wrapper
+ */
 void                msg_wrap_destroy (msg_wrap_t *msg);
+
+/**
+ * @brief destroy object wrapper
+ * 
+ * @param obj 
+ */
 void                msg_wrap_destroy_obj (msg_wrap_obj_t *obj);
 void                msg_wrap_destroy_cmd (msg_wrap_cmd_t *cmd);
 void                msg_wrap_destroy_str (msg_wrap_str_t *str);

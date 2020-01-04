@@ -1,13 +1,19 @@
 /**
- * @file msg_parser.c
+ * @file mcu_msg.h
  * @author Istvan Milak (istvan.milak@gmail.com)
- * @brief Simple message parser for embedded applications, eg serial comm
+ * @brief mcu-msg: simple parser and wrapper 
+ * for low level string based communication between microcontrollers
+ * It's designed for UART communication.
+ * The library dosen't use string.h functions and declared buffers, all of featerus are working with pointers
+ * to optimized for memory usage. Handler interface provides printing functions to standaer output
+ * with redirection to char array. Wrapper uses linked list which are modifyalbe
  * @version 0.1
- * @date 2019-12-15
+ * @date 2020-01-04
  * 
- * @copyright Copyright (c) 2019
+ * @copyright Copyright (c) 2020
  * 
  */
+
 #include <stdio.h>
 #include "mcu_msg.h"
 
@@ -28,11 +34,10 @@
 /*typedef for internal string buffer*/
 typedef struct msg_str_buff {
     msg_str_t  buff;
-    char*      p;               // pointer to the next element
+    char*      p;                         // pointer to the next element
 } msg_str_buff_t;
 
-
-static msg_str_buff_t __str_buff; // internal string buffer, must be intialized always
+static msg_str_buff_t __str_buff;        // internal string buffer, must be intialized always
 static uint8_t __redir_outp_to_buff = 0; // redirect output to buffer indicator
 
 /*putchar implementation: must be implemented for printing to UART or other output*/

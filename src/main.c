@@ -65,7 +65,7 @@ int main()
     //##############################################################################################
     printf(">> getting test_msg...\n");
     msg = msg_get(test_str1, "test_msg", sizeof(test_str1));
-    if(msg.content.s != NULL) {
+    if(msg_get_content(msg) != NULL) {
         printf("msg.id_len: %d msg.content_len: %d\n", msg.id.len, msg.content.len);
         hnd.print_str(msg.id);
         printf(":");
@@ -78,15 +78,15 @@ int main()
     //##############################################################################################
     printf(">> getting CMD1 cmd...\n");
     cmd = msg_parser_get_cmd(msg, "CMD1");
-    printf("%s\n\n", cmd.cmd.s ? "True" : "False");
+    printf("%s\n\n", msg_get_cmd_content(cmd) ? "True" : "False");
 
     printf(">> getting CMD2 cmd...\n");
     cmd = msg_parser_get_cmd(msg, "CMD2");
-    printf("%s\n\n", cmd.cmd.s ? "True" : "False");
+    printf("%s\n\n", msg_get_cmd_content(cmd) ? "True" : "False");
 
     printf(">> getting CMD_last cmd...\n");
     cmd = msg_parser_get_cmd(msg, "CMD_last");
-    printf("%s\n\n", cmd.cmd.s ? "True" : "False");
+    printf("%s\n\n", msg_get_cmd_content(cmd) ? "True" : "False");
 
     //##############################################################################################
     printf(">> getting obj1...\n");
@@ -117,7 +117,7 @@ int main()
     //##############################################################################################
     printf(">> getting obj1->key12 string...\n");
     msg_str_t str = msg_parser_get_string(obj1, "key12");
-    if(str.s != NULL) {
+    if(msg_str_p(str) != NULL) {
         hnd.print_str(str); printf(" len: %d\n\n", str.len);
     } else {
         printf("error getting string\n\n");
@@ -263,7 +263,8 @@ int main()
 
     /*Emulating master slave communication*/
     
-    printf("Emulating a master - slave communaication:\n\n");
+    printf("Emulating a master - slave communaication:\n");
+    printf("-----------------------------------------\n\n");
     memset(buff, 0, 1000);
     common_buff.buff = buff;
     common_buff.buff_size = 1000;
@@ -334,13 +335,13 @@ void *thread_mcu_master_fnc(void *arg)
         while(1) {
             
             msg_in = msg_get(buff->buff, "SLAVE_MSG", buff->buff_size);
-            if(msg_in.content.s != NULL) { // msg is arrived
+            if(msg_get_content(msg_in) != NULL) { // msg is arrived
                 
                 pthread_mutex_lock(&outp_lock); // LOCK
                 
                 temp_obj = msg_parser_get_obj(msg_in, "Temp");
 
-                if(temp_obj.content.s != NULL) {
+                if(msg_get_content(temp_obj) != NULL) {
                     
                     if(msg_parser_get_float(&T1, temp_obj, "T1") != -1) {
                     printf("Master >> T1 = %f (from Slave)\n", T1);
@@ -402,12 +403,12 @@ void *thread_mcu_slave_fnc(void *arg)
             msg_in = msg_get(buff->buff, "MASTER_MSG", buff->buff_size);
             
 
-            if(msg_in.content.s != NULL) { //message arrived
+            if(msg_get_content(msg_in) != NULL) { //message arrived
 
                 
 
                 cmd = msg_parser_get_cmd(msg_in, "Get_Temp");
-                if(cmd.cmd.s != NULL) { //command arrived
+                if(msg_get_cmd_content(cmd) != NULL) { //command arrived
 
                     pthread_mutex_lock(&outp_lock); // LOCK
 
