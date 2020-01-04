@@ -343,10 +343,10 @@ void *thread_mcu_master_fnc(void *arg)
 
                 if(msg_get_content(temp_obj) != NULL) {
                     
-                    if(msg_parser_get_float(&T1, temp_obj, "T1") != -1) {
+                    if(msg_parser_get_float(&T1, temp_obj, "T1")) {
                     printf("Master >> T1 = %f (from Slave)\n", T1);
                     }
-                    if(msg_parser_get_float(&T2, temp_obj, "T2") != -1) {
+                    if(msg_parser_get_float(&T2, temp_obj, "T2")) {
                         printf("Master >> T2 = %f (from Slave)\n", T2);
                     }
                     

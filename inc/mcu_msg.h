@@ -212,9 +212,9 @@ msg_cmd_t           msg_parser_get_cmd (msg_t msg, char *cmd_id);
  * @param res result integer pointer
  * @param obj object
  * @param key key
- * @return int8_t -1 if not found, digit count if found 
+ * @return uint8_t 0 if not found, digit count if found 
  */
-int8_t              msg_parser_get_int (int *res, msg_obj_t obj, char *key);
+uint8_t             msg_parser_get_int (int *res, msg_obj_t obj, char *key);
 
 /**
  * @brief Get float from object
@@ -222,9 +222,9 @@ int8_t              msg_parser_get_int (int *res, msg_obj_t obj, char *key);
  * @param res_val result float pointer
  * @param obj object
  * @param key key
- * @return int8_t -1 if not found, digit count if found 
+ * @return uint8_t 0 if not found, digit count if found 
  */
-int8_t              msg_parser_get_float (float *res_val, msg_obj_t obj, char *key);
+uint8_t             msg_parser_get_float (float *res_val, msg_obj_t obj, char *key);
 
 /**
  * @brief Get string from object

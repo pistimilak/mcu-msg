@@ -33,7 +33,7 @@
 
 /*typedef for internal string buffer*/
 typedef struct msg_str_buff {
-    msg_str_t  buff;
+    msg_str_t  buff;                      // string buffer
     char*      p;                         // pointer to the next element
 } msg_str_buff_t;
 
@@ -71,7 +71,9 @@ static void             __msg_wrapper_print_msg(msg_wrap_t msg);
 #endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                         //
 //                                      Parser functions                                   //
+//                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 /*destroy string*/
@@ -102,6 +104,7 @@ void msg_destroy_cmd(msg_cmd_t *cmd)
     msg_destroy_string(&cmd->cmd);
 }
 
+/*Create primitive string object*/
 msg_str_t msg_init_string(char *str)
 {
     msg_str_t res;
@@ -288,7 +291,7 @@ static msg_str_t __find_val(msg_obj_t obj, char *key)
 }
 
 
-/*get message*/
+/*get message by ID*/
 msg_t msg_get(char *raw_str, char *id, msg_size_t len)
 {
     msg_t res;
@@ -313,7 +316,7 @@ msg_t msg_get(char *raw_str, char *id, msg_size_t len)
 }
 
 
-
+/*Get object from message by ID*/
 msg_obj_t msg_parser_get_obj(msg_t msg, char *id)
 {
     msg_obj_t res;
@@ -336,6 +339,7 @@ msg_obj_t msg_parser_get_obj(msg_t msg, char *id)
     return res;
 }
 
+/*Get command from message by ID*/
 msg_cmd_t msg_parser_get_cmd(msg_t msg, char *cmd_id)
 {
     msg_cmd_t res;
@@ -344,7 +348,11 @@ msg_cmd_t msg_parser_get_cmd(msg_t msg, char *cmd_id)
     return res;
 }
 
-int8_t msg_parser_get_int(int *res_val, msg_obj_t obj, char *key)
+/*
+Get primitive integer value from object by key
+Return 0 if there is an error or count of digits
+*/
+uint8_t msg_parser_get_int(int *res_val, msg_obj_t obj, char *key)
 {
     msg_str_t sval = __find_val(obj, key);
     msg_size_t i;
@@ -353,7 +361,7 @@ int8_t msg_parser_get_int(int *res_val, msg_obj_t obj, char *key)
     int8_t res = 0; // result of function
 
     if(sval.s == NULL)  //key nout found
-        return -1;
+        return 0;
 
 
     switch(*sval.s) { //if the sign is defined, set the sign variable and increment the pointer
@@ -373,7 +381,7 @@ int8_t msg_parser_get_int(int *res_val, msg_obj_t obj, char *key)
 
     for(i = 0; __is_p_in_str(obj.content, sval.s) && !__is_whitespace(*sval.s) && *sval.s != __CTRL_KEY_SEP; i++, sval.s++) { //move to the end of the value string with i
         if(*sval.s < '0' || *sval.s > '9') {    // if non valid number, return with error
-            return -1;
+            return 0;
         }
     }
 
@@ -390,8 +398,11 @@ int8_t msg_parser_get_int(int *res_val, msg_obj_t obj, char *key)
     return res; // return with the digit count, if correct
 }
 
-
-int8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
+/*
+Get primitive float value from object by key
+Return 0 if key not found or digit count
+*/
+uint8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
 {
     msg_str_t sval = __find_val(obj, key);
     char *pf;
@@ -402,7 +413,7 @@ int8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
     int8_t res = 0; // result of function
 
     if(sval.s == NULL)  //key nout found
-        return -1;
+        return 0;
 
 
     switch(*sval.s) { //if the sign is defined, set the sign variable and increment the pointer
@@ -423,7 +434,7 @@ int8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
     //move p to dec separator or end of the value
     for(i = 0; __is_p_in_str(obj.content, sval.s) && !__is_whitespace(*sval.s) && *sval.s != __CTRL_KEY_SEP && *sval.s != '.'; i++, sval.s++) { 
         if((*sval.s < '0' || *sval.s > '9')) {    // if non valid number, return with error
-            return -1;
+            return 0;
         }
     }
 
@@ -446,7 +457,7 @@ int8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
     // calculate floating point section after '.' (if there is)
     for(; pf != NULL && __is_p_in_str(obj.content, pf) && !__is_whitespace(*pf) && *pf != __CTRL_KEY_SEP; pf++) {
         if(*pf < '0' || *pf > '9') {    // if non valid number, return with error
-            return -1;
+            return 0;
         }
         *res_val += (*pf - '0') * mf;
         mf /= 10;
@@ -459,7 +470,10 @@ int8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
 }
 
 
-
+/*
+Get primitive string object from object by key
+return with string object which is destroyd if there is any error 
+*/
 msg_str_t msg_parser_get_string(msg_obj_t obj, char *key)
 {
     msg_str_t res = __find_val(obj, key);
@@ -486,17 +500,30 @@ msg_str_t msg_parser_get_string(msg_obj_t obj, char *key)
     return res;
 }
 
-
+/**
+ * @brief Enable buffer redirection. This function is in handler
+ * 
+ */
 static void __msg_enable_buff(void)
 {
     __redir_outp_to_buff = 1;
 }
 
+/**
+ * @brief Disable buffering and set back the standard output printing
+ * 
+ */
 static void __msg_disable_buff(void)
 {
     __redir_outp_to_buff = 0;
 }
 
+/**
+ * @brief Init internal string buffer
+ * 
+ * @param buff buffer pointer by user
+ * @param buff_size buffer size
+ */
 static void __msg_init_str_buff(char *buff, msg_size_t buff_size)
 {
     __str_buff.buff.len = buff_size;
@@ -504,11 +531,22 @@ static void __msg_init_str_buff(char *buff, msg_size_t buff_size)
     __str_buff.p = __str_buff.buff.s;
 }
 
+
+/**
+ * @brief Reset internal string buffer, set the position to first address of buffer
+ * 
+ */
 static void __msg_reset_str_buff(void)
 {
     __str_buff.p = __str_buff.buff.s; //reset pointer (set to the start position)
 }
 
+/**
+ * @brief Putchar to string buff
+ * 
+ * @param c character
+ * @return msg_size_t free space in buffer or 0 if there is any error 
+ */
 static msg_size_t __msg_putc_to_buff(char c)
 {
 
@@ -521,6 +559,11 @@ static msg_size_t __msg_putc_to_buff(char c)
     return __str_buff.buff.len - (__str_buff.p - __str_buff.buff.s); // return with the empty spaces
 }
 
+/**
+ * @brief Putchar interface for other functions
+ * 
+ * @param c char
+ */
 static void __msg_putc(char c)
 {
     if (__redir_outp_to_buff) { // if output is redirected, use the internal string buffer
@@ -530,6 +573,11 @@ static void __msg_putc(char c)
     }
 }
 
+/**
+ * @brief Print integer
+ * 
+ * @param i integer value
+ */
 static void __msg_print_int(int i)
 {
     // int8_t sign = i < 0 ? -1: 1;
@@ -559,6 +607,12 @@ static void __msg_print_int(int i)
     
 }
 
+/**
+ * @brief Print float
+ * 
+ * @param f float value
+ * @param prec precision of printing
+ */
 static void __msg_print_float(float f, uint8_t prec)
 {
     int i_part = (int)f;
@@ -572,6 +626,11 @@ static void __msg_print_float(float f, uint8_t prec)
 }
 
 
+/**
+ * @brief Print string
+ * 
+ * @param str string object
+ */
 static void __msg_print_str(msg_str_t str)
 {
     msg_size_t i;
@@ -581,6 +640,12 @@ static void __msg_print_str(msg_str_t str)
     for(i = 0; i < str.len; __msg_putc(*(str.s + i)), i++);
 }
 
+
+/**
+ * @brief print message
+ * 
+ * @param msg 
+ */
 static void __msg_print(msg_t msg)
 {
     __msg_print_str(msg.content);
@@ -617,6 +682,12 @@ msg_hnd_t msg_hnd_create(int (*putc)(char))
     return hnd;
 }
 
+/**
+ * @brief Defining the quotation mark. Default is ", if there is an occurance of ", ' will be used
+ * 
+ * @param str string object
+ * @return char quotion mark
+ */
 static inline char __define_qmark(msg_str_t str)
 {
     char *p = str.s;
@@ -633,24 +704,42 @@ static inline char __define_qmark(msg_str_t str)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                         //
 //                                     Wrapper functions                                   //
+//                                                                                         //
 /////////////////////////////////////////////////////////////////////////////////////////////
 #if MCU_MSG_USE_WRAPPER
 
-
+/**
+ * @brief Printing key and equal sign
+ * 
+ */
 #define __print_key_equ(key_str)        __msg_putc(__CTRL_KEY_FLAG); \
                                         __msg_print_str(key_str);    \
                                         __msg_putc(__CTRL_KEY_EQU)
-
+/**
+ * @brief Print message start chars with flag and start char and message id
+ * 
+ */
 #define __print_msg_start(msg)          __msg_putc(__CTRL_MSG_FLAG); \
                                         __msg_print_str(msg.id);     \
                                         __msg_putc(__CTRL_START_MSG)
 
 
+
+/**
+ * @brief Print object start with flag start char and object id
+ * 
+ */
 #define __print_obj_start(obj)          __msg_putc(__CTRL_OBJ_FLAG);  \
                                         __msg_print_str(obj.id);      \
                                         __msg_putc(__CTRL_START_OBJ)  
 
+/**
+ * @brief Print object wrapper
+ * 
+ * @param obj object wrapper to print
+ */
 static void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
 {
     msg_wrap_str_t *sp;
@@ -691,7 +780,11 @@ static void __msg_wrapper_print_obj(msg_wrap_obj_t obj)
 }
 
 
-
+/**
+ * @brief Print command wrapper
+ * 
+ * @param cmd command wrapper to print
+ */
 static inline void __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd)
 {
     if(cmd.cmd.s != NULL) {
@@ -702,7 +795,11 @@ static inline void __msg_wrapper_print_cmd(msg_wrap_cmd_t cmd)
 }
 
 
-
+/**
+ * @brief Print message wrapper
+ * 
+ * @param msg message wrapper to print
+ */
 static void __msg_wrapper_print_msg(msg_wrap_t msg)
 {
     msg_wrap_obj_t *pobj;
@@ -712,11 +809,13 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
         return;
     __print_msg_start(msg);
     
+    /*Print command queue*/
     pcmd = msg.cmd_queue;
     while(pcmd != NULL) {
         __msg_wrapper_print_cmd(*pcmd);
         pcmd = pcmd->next;   
     }
+    /*Print object queue*/
     pobj = msg.obj_queue;
     while(pobj != NULL) {
         __msg_wrapper_print_obj(*pobj);
@@ -726,8 +825,7 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
 }
 
 
-
-
+/*Destroy message wrappe*/
 void msg_wrap_destroy(msg_wrap_t *msg)
 {
     msg_destroy_string(&msg->id);
@@ -735,6 +833,7 @@ void msg_wrap_destroy(msg_wrap_t *msg)
     msg->obj_queue = NULL;
 }
 
+/*Destroy object wrapper*/
 void msg_wrap_destroy_obj(msg_wrap_obj_t *obj)
 {
     msg_destroy_string(&obj->id);
@@ -744,12 +843,16 @@ void msg_wrap_destroy_obj(msg_wrap_obj_t *obj)
     obj->next = NULL;
 }
 
+
+/*destroy command wrapper*/
 void msg_wrap_destroy_cmd(msg_wrap_cmd_t *cmd)
 {
     msg_destroy_string(&cmd->cmd);
     cmd->next = NULL;
 }
 
+
+/*destroy string wrapper*/
 void msg_wrap_destroy_str(msg_wrap_str_t *str)
 {
     msg_destroy_string(&str->id);
@@ -757,6 +860,8 @@ void msg_wrap_destroy_str(msg_wrap_str_t *str)
     str->next = NULL;
 }
 
+
+/*destroy integer wrapper*/
 void msg_wrap_destroy_int(msg_wrap_int_t *i)
 {
     msg_destroy_string(&i->id);
@@ -764,6 +869,7 @@ void msg_wrap_destroy_int(msg_wrap_int_t *i)
     i->next = NULL;
 }
 
+/*Destroy float wrapper*/
 void msg_wrap_destroy_float(msg_wrap_float_t *f)
 {
     msg_destroy_string(&f->id);
@@ -773,7 +879,7 @@ void msg_wrap_destroy_float(msg_wrap_float_t *f)
 }
 
 
-
+/*Create message wrapper*/
 msg_wrap_t msg_wrapper_init_msg(char *msg_id)
 {
     msg_wrap_t res;
@@ -783,7 +889,7 @@ msg_wrap_t msg_wrapper_init_msg(char *msg_id)
     return res;
 }
 
-
+/*Create command wrapper*/
 msg_wrap_cmd_t msg_wrapper_init_cmd(char *cmd)
 {
     msg_wrap_cmd_t res;
@@ -792,6 +898,7 @@ msg_wrap_cmd_t msg_wrapper_init_cmd(char *cmd)
     return res;
 }
 
+/*Create object wrapper*/
 msg_wrap_obj_t msg_wrapper_init_obj(char *obj_id)
 {
     msg_wrap_obj_t res;
@@ -803,6 +910,7 @@ msg_wrap_obj_t msg_wrapper_init_obj(char *obj_id)
     return res;
 }
 
+/*Create string wrapper*/
 msg_wrap_str_t msg_wrapper_init_string(char *id, char *content)
 {
     msg_wrap_str_t res;
@@ -812,6 +920,7 @@ msg_wrap_str_t msg_wrapper_init_string(char *id, char *content)
     return res;
 }
 
+/*Create int wrapper*/
 msg_wrap_int_t msg_wrapper_init_int(char *id, int val)
 {
     msg_wrap_int_t res;
@@ -821,6 +930,7 @@ msg_wrap_int_t msg_wrapper_init_int(char *id, int val)
     return res;
 }
 
+/*create float wrapper*/
 msg_wrap_float_t msg_wrapper_init_float(char *id, float val, uint8_t prec)
 {
     msg_wrap_float_t res;
@@ -831,14 +941,14 @@ msg_wrap_float_t msg_wrapper_init_float(char *id, float val, uint8_t prec)
     return res;
 }
 
-
+/*Add string wrapper to object wrapper*/
 void msg_wrapper_add_string_to_obj(msg_wrap_obj_t *obj, msg_wrap_str_t *str)
 {
     msg_wrap_str_t *strp;
     if(obj->string_queue == NULL) { //empty
         obj->string_queue = str;
         obj->string_queue->next = NULL;
-    } else {
+    } else { // put to the end of the queue
         strp = obj->string_queue;
 
         while(strp->next != NULL) 
@@ -848,7 +958,7 @@ void msg_wrapper_add_string_to_obj(msg_wrap_obj_t *obj, msg_wrap_str_t *str)
     }
 }
 
-
+/*Remove string wrapper from string queue*/
 void msg_wrapper_rm_string_from_obj(msg_wrap_obj_t *obj, msg_wrap_str_t *str)
 {
     msg_wrap_str_t *sp, *prev;
@@ -866,13 +976,14 @@ void msg_wrapper_rm_string_from_obj(msg_wrap_obj_t *obj, msg_wrap_str_t *str)
     }
 }
 
+/*Add int wrapper to object wrapper*/
 void msg_wrapper_add_int_to_obj(msg_wrap_obj_t *obj, msg_wrap_int_t *int_val)
 {
     msg_wrap_int_t *ip;
     if(obj->int_queue == NULL) { //first element
         obj->int_queue = int_val;
         obj->int_queue->next = NULL;
-    } else {
+    } else { // push to the end of the queue
         ip = obj->int_queue;
 
         while(ip->next != NULL) 
@@ -882,7 +993,7 @@ void msg_wrapper_add_int_to_obj(msg_wrap_obj_t *obj, msg_wrap_int_t *int_val)
     }
 }
 
-
+/*Remove int wrapper from integer wrapper queue*/
 void msg_wrapper_rm_int_from_obj(msg_wrap_obj_t *obj, msg_wrap_int_t *i)
 {
     msg_wrap_int_t *ip, *prev;
@@ -900,6 +1011,7 @@ void msg_wrapper_rm_int_from_obj(msg_wrap_obj_t *obj, msg_wrap_int_t *i)
     }
 }
 
+/*Add float wrapper to object wrapper*/
 void msg_wrapper_add_float_to_obj(msg_wrap_obj_t *obj, msg_wrap_float_t *float_val)
 {
     msg_wrap_float_t *fp;
@@ -916,7 +1028,7 @@ void msg_wrapper_add_float_to_obj(msg_wrap_obj_t *obj, msg_wrap_float_t *float_v
     }
 }
 
-
+/*Remove float wrapper from float queue*/
 void msg_wrapper_rm_float_from_obj(msg_wrap_obj_t *obj, msg_wrap_float_t *f)
 {
     msg_wrap_float_t *fp, *prev;
@@ -934,13 +1046,14 @@ void msg_wrapper_rm_float_from_obj(msg_wrap_obj_t *obj, msg_wrap_float_t *f)
     }
 }
 
+/*Add object wrapper to message wrapper*/
 void msg_wrapper_add_object_to_msg(msg_wrap_t *msg, msg_wrap_obj_t *obj)
 {
     msg_wrap_obj_t *op;
     if(msg->obj_queue == NULL) { //if empty 
         msg->obj_queue = obj;
         msg->obj_queue->next = NULL;
-    } else {
+    } else { // put to end of the queue
         op = msg->obj_queue;
         while(op->next != NULL)
             op = op->next;
@@ -949,6 +1062,7 @@ void msg_wrapper_add_object_to_msg(msg_wrap_t *msg, msg_wrap_obj_t *obj)
     }
 }
 
+/*remove object wrapper from message wrapper object queue*/
 void msg_wrapper_rm_obj_from_msg(msg_wrap_t *msg, msg_wrap_obj_t *obj)
 {
     msg_wrap_obj_t *op, *prev;
@@ -966,6 +1080,7 @@ void msg_wrapper_rm_obj_from_msg(msg_wrap_t *msg, msg_wrap_obj_t *obj)
     }    
 }
 
+/*Add command wrapper to message wrapper*/
 void msg_wrapper_add_cmd_to_msg(msg_wrap_t *msg, msg_wrap_cmd_t *cmd)
 {
     msg_wrap_cmd_t *cp;
@@ -981,6 +1096,7 @@ void msg_wrapper_add_cmd_to_msg(msg_wrap_t *msg, msg_wrap_cmd_t *cmd)
     }
 }
 
+/*Remove command wrapper from message wrapper command queue*/
 void msg_wrapper_rm_cmd_from_msg(msg_wrap_t *msg, msg_wrap_cmd_t *cmd)
 {
     msg_wrap_cmd_t *cp, *prev;
