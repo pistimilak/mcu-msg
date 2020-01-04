@@ -47,7 +47,7 @@ static int (*__putc)(char) = NULL;
 static void             __msg_enable_buff(void);
 static void             __msg_disable_buff(void);
 static void             __msg_init_str_buff(char *buff, msg_size_t buff_size);
-static void             __msg_reset_str_buff(char *buff, msg_size_t buff_size);
+static void             __msg_reset_str_buff(void);
 static msg_size_t       __msg_putc_to_buff(char c);
 static void             __msg_putc(char c); //use std out or redirected string buff;
 
@@ -504,7 +504,7 @@ static void __msg_init_str_buff(char *buff, msg_size_t buff_size)
     __str_buff.p = __str_buff.buff.s;
 }
 
-static void __msg_reset_str_buff(char *buff, msg_size_t buff_size)
+static void __msg_reset_str_buff(void)
 {
     __str_buff.p = __str_buff.buff.s; //reset pointer (set to the start position)
 }
@@ -575,9 +575,9 @@ static void __msg_print_float(float f, uint8_t prec)
 static void __msg_print_str(msg_str_t str)
 {
     msg_size_t i;
-    if(!__msg_putc) { //if function pointer is NULL, return
-        return;
-    }
+    // if(__msg_putc == NULL) { //if function pointer is NULL, return
+    //     return;
+    // }
     for(i = 0; i < str.len; __msg_putc(*(str.s + i)), i++);
 }
 
@@ -708,7 +708,7 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
     msg_wrap_obj_t *pobj;
     msg_wrap_cmd_t *pcmd;
 
-    if(!__msg_putc || msg.id.s == NULL) // return if putchar not implemented
+    if(msg.id.s == NULL) // return if message id is not set
         return;
     __print_msg_start(msg);
     

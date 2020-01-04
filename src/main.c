@@ -55,7 +55,7 @@ int main()
     msg_t msg;
     msg_obj_t obj1, obj2;
     msg_cmd_t cmd;
-    msg_hnd_t hnd = msg_hnd_create(putchar);
+    msg_hnd_t hnd = msg_hnd_create((int (*) (char))putchar);
     
     printf("TEST mcu-msg-parser\n");
     printf("===================\n");
@@ -302,7 +302,7 @@ void *thread_mcu_master_fnc(void *arg)
         float T1, T2;
 
         /*Create handler*/
-        hnd = msg_hnd_create(putchar);
+        hnd = msg_hnd_create((int (*) (char))putchar);
 
         /*init common string buffer*/
         hnd.init_str_buff(buff->buff, buff->buff_size);
@@ -359,7 +359,7 @@ void *thread_mcu_master_fnc(void *arg)
             usleep(1000);
         }
 
-        return;
+        return 0;
 }
 
 
@@ -376,7 +376,7 @@ void *thread_mcu_slave_fnc(void *arg)
         msg_wrap_float_t T2;
 
         /*Create handler*/
-        hnd = msg_hnd_create(putchar);
+        hnd = msg_hnd_create((int(*)(char))putchar);
 
         /*init common string buffer*/
         hnd.init_str_buff(buff->buff, buff->buff_size);
@@ -430,6 +430,6 @@ void *thread_mcu_slave_fnc(void *arg)
             usleep(1000);
         }
 
-        return;
+        return 0;
 
 }

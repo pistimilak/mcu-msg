@@ -50,7 +50,7 @@ typedef struct msg_cmd {
 } msg_cmd_t;
 
 /*Getting command*/
-#define msg_get_cmd_content(cmd)            msg_str_p(cmd.cmd)
+#define msg_get_cmd_content(cmd)        msg_str_p(cmd.cmd)
 
 
 /*Get content for checking NULL pointers or content*/
@@ -90,7 +90,7 @@ typedef struct msg_wrap_str {
 typedef struct msg_wrap_int {
     msg_str_t       id;     // id string
     int             val;    // int value
-    struct msg_int* next;   // next wrap integer
+    struct msg_wrap_int* next;   // next wrap integer
 } msg_wrap_int_t;
 
 
@@ -99,7 +99,7 @@ typedef struct msg_wrap_float {
     msg_str_t         id;       // id string
     float             val;      // float value
     uint8_t           prec;     // precision for printing
-    struct msg_float* next;     // next wrap float
+    struct msg_wrap_float* next;     // next wrap float
 } msg_wrap_float_t;
 
 
