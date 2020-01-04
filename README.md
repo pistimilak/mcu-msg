@@ -59,7 +59,7 @@ msg_obj_t obj1;
 msg_cmd_t cmd;
 
 /*Creating handler*/
-msg_hnd_t hnd = msg_hnd_create((int (*) (char))putchar); // it an be your putchar implementation
+msg_hnd_t hnd = msg_hnd_create((int (*) (char))putchar); // it can be your putchar implementation
 
 /*Get message*/
 msg = msg_get(test_str1, "test_msg", sizeof(test_str1));
@@ -93,7 +93,7 @@ msg_wrap_t msg_out;
 msg_wrap_cmd_t cmd;
 
 /*Create handler*/
-hnd = msg_hnd_create((int (*) (char))putchar); // it an be your putchar implementation
+hnd = msg_hnd_create((int (*) (char))putchar); // it can be your putchar implementation
 
 /*Init string buffer*/
 hnd.init_str_buff(buff, 1000);
@@ -124,7 +124,7 @@ msg_wrap_float_t T1;
 msg_wrap_float_t T2;
 
 /*Create handler*/
-hnd = msg_hnd_create((int (*) (char))putchar); // it an be your putchar implementation
+hnd = msg_hnd_create((int (*) (char))putchar); // it can be your putchar implementation
 
 /*Init message wrappeper*/
 msg_out = msg_wrapper_create_msg("SLAVE_MSG");
