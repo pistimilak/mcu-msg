@@ -57,12 +57,13 @@ int main()
     msg_cmd_t cmd;
     msg_hnd_t hnd = msg_hnd_create((int (*) (char))putchar);
     
+    printf("\n");
     printf("TEST mcu-msg-parser\n");
-    printf("===================\n");
+    printf("===================\n\n\n");
 
     printf("test_str1 = \"%s\"\n\n", test_str1);
 
-    //##############################################################################################
+   
     printf(">> getting test_msg...\n");
     msg = msg_get(test_str1, "test_msg", sizeof(test_str1));
     if(msg_get_content(msg) != NULL) {
@@ -75,7 +76,7 @@ int main()
         printf("message not found!\n\n");
     }
 
-    //##############################################################################################
+    
     printf(">> getting CMD1 cmd...\n");
     cmd = msg_parser_get_cmd(msg, "CMD1");
     printf("%s\n\n", msg_get_cmd_content(cmd) ? "True" : "False");
@@ -88,35 +89,35 @@ int main()
     cmd = msg_parser_get_cmd(msg, "CMD_last");
     printf("%s\n\n", msg_get_cmd_content(cmd) ? "True" : "False");
 
-    //##############################################################################################
+    
     printf(">> getting obj1...\n");
     obj1 = msg_parser_get_obj(msg, "obj1");
     printf("obj1.id_len: %d obj1.content_len: %d\n", obj1.id.len, obj1.content.len);
     hnd.print_str(obj1.id); printf(":"); hnd.print_str(obj1.content);
     printf("\n\n");
 
-    //##############################################################################################
+    
     printf(">> getting obj2...\n");
     obj2 = msg_parser_get_obj(msg, "obj2");
     printf("obj2.id_len: %d obj2.content_len: %d\n", obj2.id.len, obj2.content.len);
     hnd.print_str(obj2.id); printf(":"); hnd.print_str(obj2.content);
     printf("\n\n");
     
-    //##############################################################################################
+    
     printf(">> getting obj1->key11 integer...\n");
     int ival = 0, res;
     float fval = 0.0;
     res = msg_parser_get_int(&ival, obj1, "key11");
     printf("r = %d ival = %d\n\n", res, ival);
     
-    //##############################################################################################
+    
     printf(">> getting obj2->key21 float...\n");
     res = msg_parser_get_float(&fval, obj2, "key21");
     printf("r = %d fval = %.11f\n\n", res, fval);
 
-    //##############################################################################################
+    
     printf(">> getting obj1->key12 string...\n");
-    msg_str_t str = msg_parser_get_string(obj1, "key12");
+    msg_str_t str = msg_parser_get_str(obj1, "key12");
     if(msg_str_p(str) != NULL) {
         hnd.print_str(str); printf(" len: %d\n\n", str.len);
     } else {
@@ -130,9 +131,9 @@ int main()
 //                                 MCU-MSG Wrapper test                                      //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 #if MCU_MSG_USE_WRAPPER  
-
+    printf("\n");
     printf("TEST mcu-msg-wrapper\n");
-    printf("====================\n");
+    printf("====================\n\n\n");
 
     // msg_wrap_hnd_t wrapper_hnd = msg_wrapper_hnd_create(putchar);
     msg_wrap_t msg_wrap;
@@ -146,49 +147,49 @@ int main()
     float f_val; 
     int i_val;
     
-    msg_wrap = msg_wrapper_init_msg("wrapped_msg");
+    msg_wrap = msg_wrapper_create_msg("wrapped_msg");
     printf("Initialized msg: #"); hnd.print_str(msg_wrap.id); printf("\n\n");
     
-    obj1_wrap = msg_wrapper_init_obj("wrapped_obj1");
+    obj1_wrap = msg_wrapper_create_obj("wrapped_obj1");
     printf("Initialized obj: @"); hnd.print_str(obj1_wrap.id); printf("\n\n");
 
 
-    str1 = msg_wrapper_init_string("str1", "This is \"string 1\"");
+    str1 = msg_wrapper_create_str("str1", "This is \"string 1\"");
     printf("Initialized str: $"); hnd.print_str(str1.id); putchar('='); hnd.print_str(str1.content); printf("\n\n");
     
-    str2 = msg_wrapper_init_string("str2", "This is 'string 2'");
+    str2 = msg_wrapper_create_str("str2", "This is 'string 2'");
     printf("Initialized str: $"); hnd.print_str(str2.id); putchar('='); hnd.print_str(str2.content); printf("\n\n");
 
-    str3 = msg_wrapper_init_string("str3", ".... \"string 3\"");
+    str3 = msg_wrapper_create_str("str3", ".... \"string 3\"");
     printf("Initialized str: $"); hnd.print_str(str3.id); putchar('='); hnd.print_str(str3.content); printf("\n\n");
 
     /* Preapare object */
     printf("Add '$str2', '$str3' to '@wrapped_obj1'...\n\n");
-    msg_wrapper_add_string_to_obj(&obj1_wrap, &str2);
-    msg_wrapper_add_string_to_obj(&obj1_wrap, &str3);
+    msg_wrapper_add_str_to_obj(&obj1_wrap, &str2);
+    msg_wrapper_add_str_to_obj(&obj1_wrap, &str3);
 
     printf("Add '@wrapped_obj1' to '#wrapped_msg'...\n\n");
-    msg_wrapper_add_object_to_msg(&msg_wrap, &obj1_wrap);
+    msg_wrapper_add_obj_to_msg(&msg_wrap, &obj1_wrap);
 
-    cmd_wrap = msg_wrapper_init_cmd("CMD_WRAP");
+    cmd_wrap = msg_wrapper_create_cmd("CMD_WRAP");
     printf("Initialized cmd: <"); hnd.print_str(cmd_wrap.cmd); printf(">\n\n");
     
-    cmd_rem = msg_wrapper_init_cmd("CMD_REMOVEABLE");
+    cmd_rem = msg_wrapper_create_cmd("CMD_REMOVEABLE");
     printf("Initialized cmd: <"); hnd.print_str(cmd_rem.cmd); printf(">\n\n");
 
-    i1 = msg_wrapper_init_int("i1", -3244);
+    i1 = msg_wrapper_create_int("i1", -3244);
     printf("Initialized int: $"); hnd.print_str(i1.id); printf("=%d\n\n", i1.val);
 
-    i2 = msg_wrapper_init_int("i2", 456789);
+    i2 = msg_wrapper_create_int("i2", 456789);
     printf("Initialized int: $"); hnd.print_str(i2.id); printf("=%d\n\n", i2.val);
     
-    f1 = msg_wrapper_init_float("f1", 1.23456, 6);
+    f1 = msg_wrapper_create_float("f1", 1.23456, 6);
     printf("Initialized float: $"); hnd.print_str(f1.id); printf("=%.6f\n\n", f1.val);
 
-    f2 = msg_wrapper_init_float("f2", -0.3345, 6);
+    f2 = msg_wrapper_create_float("f2", -0.3345, 6);
     printf("Initialized float: $"); hnd.print_str(f2.id); printf("=%.6f\n\n", f2.val);
 
-    obj2_wrap = msg_wrapper_init_obj("wrapped_obj2");
+    obj2_wrap = msg_wrapper_create_obj("wrapped_obj2");
     printf("Initialized obj: @"); hnd.print_str(obj2_wrap.id); printf("\n\n");
 
     printf("Add '$i1', '$i2', '$f1', '$f2' and '$str1' to '@wrapped_obj2'\n\n");
@@ -196,13 +197,13 @@ int main()
     msg_wrapper_add_int_to_obj(&obj2_wrap, &i2);
     msg_wrapper_add_float_to_obj(&obj2_wrap, &f1);
     msg_wrapper_add_float_to_obj(&obj2_wrap, &f2);
-    msg_wrapper_add_string_to_obj(&obj2_wrap, &str1);
+    msg_wrapper_add_str_to_obj(&obj2_wrap, &str1);
 
     printf("Add '<CMD_WRAP>' to '#wrapped_msg'...\n\n");
     msg_wrapper_add_cmd_to_msg(&msg_wrap, &cmd_wrap);
 
     printf("Add '@wrapped_obj2' to '#wrapped_msg'...\n\n");
-    msg_wrapper_add_object_to_msg(&msg_wrap, &obj2_wrap);
+    msg_wrapper_add_obj_to_msg(&msg_wrap, &obj2_wrap);
     
     printf("Add '<CMD_REMOVABLE>' to '#wrapped_msg'...\n\n");
     msg_wrapper_add_cmd_to_msg(&msg_wrap, &cmd_rem);
@@ -226,7 +227,7 @@ int main()
     msg_wrapper_rm_cmd_from_msg(&msg_wrap, &cmd_rem);
 
     printf("Add '@wrapped_obj1' AGAIN to '#wrapped_msg'...\n\n");
-    msg_wrapper_add_object_to_msg(&msg_wrap, &obj1_wrap);
+    msg_wrapper_add_obj_to_msg(&msg_wrap, &obj1_wrap);
 
     printf("Wrapped message:\n");
     printf("---------------\n\n");
@@ -308,10 +309,10 @@ void *thread_mcu_master_fnc(void *arg)
         hnd.init_str_buff(buff->buff, buff->buff_size);
         
         /*Init message wrappeper*/
-        msg_out = msg_wrapper_init_msg("MASTER_MSG");
+        msg_out = msg_wrapper_create_msg("MASTER_MSG");
         
         /*Init command*/
-        cmd = msg_wrapper_init_cmd("Get_Temp");
+        cmd = msg_wrapper_create_cmd("Get_Temp");
 
         /*Add command to the message*/
         msg_wrapper_add_cmd_to_msg(&msg_out, &cmd);
@@ -382,18 +383,18 @@ void *thread_mcu_slave_fnc(void *arg)
         hnd.init_str_buff(buff->buff, buff->buff_size);
 
         /*Init message wrappeper*/
-        msg_out = msg_wrapper_init_msg("SLAVE_MSG");
+        msg_out = msg_wrapper_create_msg("SLAVE_MSG");
 
         /*Init object*/
-        temp_obj = msg_wrapper_init_obj("Temp");
+        temp_obj = msg_wrapper_create_obj("Temp");
 
         /*Init Temperatures*/
-        T1 = msg_wrapper_init_float("T1", 32.45, 2);
-        T2 = msg_wrapper_init_float("T2", 29.34, 2);
+        T1 = msg_wrapper_create_float("T1", 32.45, 2);
+        T2 = msg_wrapper_create_float("T2", 29.34, 2);
 
         msg_wrapper_add_float_to_obj(&temp_obj, &T1);
         msg_wrapper_add_float_to_obj(&temp_obj, &T2);
-        msg_wrapper_add_object_to_msg(&msg_out, &temp_obj);
+        msg_wrapper_add_obj_to_msg(&msg_out, &temp_obj);
 
         /*Polling the commong buffer*/
         while(1) {

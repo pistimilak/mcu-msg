@@ -77,7 +77,7 @@ static void             __msg_wrapper_print_msg(msg_wrap_t msg);
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 /*destroy string*/
-void msg_destroy_string(msg_str_t *str)
+void msg_destroy_str(msg_str_t *str)
 {
     str->s = NULL;
     str->len = 0;
@@ -86,22 +86,22 @@ void msg_destroy_string(msg_str_t *str)
 /*destroy message*/
 void msg_destroy(msg_t *msg)
 {
-    msg_destroy_string(&msg->id);
-    msg_destroy_string(&msg->content);
+    msg_destroy_str(&msg->id);
+    msg_destroy_str(&msg->content);
 }
 
 
 /*destroy object*/
 void msg_destroy_obj(msg_obj_t *obj)
 {
-    msg_destroy_string(&obj->id);
-    msg_destroy_string(&obj->content);
+    msg_destroy_str(&obj->id);
+    msg_destroy_str(&obj->content);
 }
 
 /*destroy cmd*/
 void msg_destroy_cmd(msg_cmd_t *cmd)
 {
-    msg_destroy_string(&cmd->cmd);
+    msg_destroy_str(&cmd->cmd);
 }
 
 /*Create primitive string object*/
@@ -256,7 +256,7 @@ static msg_str_t __find_keyword(msg_str_t str, char *keyword, char flagc, char s
         p++;
     }
     // if not found (loop finished whitout match) return with a destroyed string
-    msg_destroy_string(&res);
+    msg_destroy_str(&res);
     return res;
 }
 
@@ -274,7 +274,7 @@ static msg_str_t __find_val(msg_obj_t obj, char *key)
     msg_str_t res  = __find_keyword(obj.content, key, __CTRL_KEY_FLAG, __CTRL_KEY_EQU); //object start with @ and terminated with space or '('
     char *p;
     if(res.s == NULL) { //if keyword not found, return with NULLs and 0 lengths
-        msg_destroy_string(&res);
+        msg_destroy_str(&res);
         return res;
     }
     if(*res.s != __CTRL_KEY_EQU) { // move pointer to 'equal'
@@ -474,21 +474,21 @@ uint8_t msg_parser_get_float(float *res_val, msg_obj_t obj, char *key)
 Get primitive string object from object by key
 return with string object which is destroyd if there is any error 
 */
-msg_str_t msg_parser_get_string(msg_obj_t obj, char *key)
+msg_str_t msg_parser_get_str(msg_obj_t obj, char *key)
 {
     msg_str_t res = __find_val(obj, key);
     char qmark;
     char *p;
 
     if(res.s == NULL) {
-        msg_destroy_string(&res);
+        msg_destroy_str(&res);
         return res;
     }
         
     qmark = *res.s;
 
     if(qmark != '\'' && qmark != '"') { // qmark not found, this is not a string
-        msg_destroy_string(&res);
+        msg_destroy_str(&res);
         return res;
     }
 
@@ -828,7 +828,7 @@ static void __msg_wrapper_print_msg(msg_wrap_t msg)
 /*Destroy message wrappe*/
 void msg_wrap_destroy(msg_wrap_t *msg)
 {
-    msg_destroy_string(&msg->id);
+    msg_destroy_str(&msg->id);
     msg->cmd_queue = NULL;
     msg->obj_queue = NULL;
 }
@@ -836,7 +836,7 @@ void msg_wrap_destroy(msg_wrap_t *msg)
 /*Destroy object wrapper*/
 void msg_wrap_destroy_obj(msg_wrap_obj_t *obj)
 {
-    msg_destroy_string(&obj->id);
+    msg_destroy_str(&obj->id);
     obj->int_queue = NULL;
     obj->float_queue = NULL;
     obj->string_queue = NULL;
@@ -847,7 +847,7 @@ void msg_wrap_destroy_obj(msg_wrap_obj_t *obj)
 /*destroy command wrapper*/
 void msg_wrap_destroy_cmd(msg_wrap_cmd_t *cmd)
 {
-    msg_destroy_string(&cmd->cmd);
+    msg_destroy_str(&cmd->cmd);
     cmd->next = NULL;
 }
 
@@ -855,8 +855,8 @@ void msg_wrap_destroy_cmd(msg_wrap_cmd_t *cmd)
 /*destroy string wrapper*/
 void msg_wrap_destroy_str(msg_wrap_str_t *str)
 {
-    msg_destroy_string(&str->id);
-    msg_destroy_string(&str->content);
+    msg_destroy_str(&str->id);
+    msg_destroy_str(&str->content);
     str->next = NULL;
 }
 
@@ -864,7 +864,7 @@ void msg_wrap_destroy_str(msg_wrap_str_t *str)
 /*destroy integer wrapper*/
 void msg_wrap_destroy_int(msg_wrap_int_t *i)
 {
-    msg_destroy_string(&i->id);
+    msg_destroy_str(&i->id);
     i->val = 0;
     i->next = NULL;
 }
@@ -872,7 +872,7 @@ void msg_wrap_destroy_int(msg_wrap_int_t *i)
 /*Destroy float wrapper*/
 void msg_wrap_destroy_float(msg_wrap_float_t *f)
 {
-    msg_destroy_string(&f->id);
+    msg_destroy_str(&f->id);
     f->val = 0.0;
     f->next = NULL;
     f->prec = 0;
@@ -880,7 +880,7 @@ void msg_wrap_destroy_float(msg_wrap_float_t *f)
 
 
 /*Create message wrapper*/
-msg_wrap_t msg_wrapper_init_msg(char *msg_id)
+msg_wrap_t msg_wrapper_create_msg(char *msg_id)
 {
     msg_wrap_t res;
     res.id = msg_init_string(msg_id);
@@ -890,7 +890,7 @@ msg_wrap_t msg_wrapper_init_msg(char *msg_id)
 }
 
 /*Create command wrapper*/
-msg_wrap_cmd_t msg_wrapper_init_cmd(char *cmd)
+msg_wrap_cmd_t msg_wrapper_create_cmd(char *cmd)
 {
     msg_wrap_cmd_t res;
     res.cmd = msg_init_string(cmd);
@@ -899,7 +899,7 @@ msg_wrap_cmd_t msg_wrapper_init_cmd(char *cmd)
 }
 
 /*Create object wrapper*/
-msg_wrap_obj_t msg_wrapper_init_obj(char *obj_id)
+msg_wrap_obj_t msg_wrapper_create_obj(char *obj_id)
 {
     msg_wrap_obj_t res;
     res.id = msg_init_string(obj_id);
@@ -911,7 +911,7 @@ msg_wrap_obj_t msg_wrapper_init_obj(char *obj_id)
 }
 
 /*Create string wrapper*/
-msg_wrap_str_t msg_wrapper_init_string(char *id, char *content)
+msg_wrap_str_t msg_wrapper_create_str(char *id, char *content)
 {
     msg_wrap_str_t res;
     res.id = msg_init_string(id);
@@ -921,7 +921,7 @@ msg_wrap_str_t msg_wrapper_init_string(char *id, char *content)
 }
 
 /*Create int wrapper*/
-msg_wrap_int_t msg_wrapper_init_int(char *id, int val)
+msg_wrap_int_t msg_wrapper_create_int(char *id, int val)
 {
     msg_wrap_int_t res;
     res.id = msg_init_string(id);
@@ -931,7 +931,7 @@ msg_wrap_int_t msg_wrapper_init_int(char *id, int val)
 }
 
 /*create float wrapper*/
-msg_wrap_float_t msg_wrapper_init_float(char *id, float val, uint8_t prec)
+msg_wrap_float_t msg_wrapper_create_float(char *id, float val, uint8_t prec)
 {
     msg_wrap_float_t res;
     res.id = msg_init_string(id);
@@ -942,7 +942,7 @@ msg_wrap_float_t msg_wrapper_init_float(char *id, float val, uint8_t prec)
 }
 
 /*Add string wrapper to object wrapper*/
-void msg_wrapper_add_string_to_obj(msg_wrap_obj_t *obj, msg_wrap_str_t *str)
+void msg_wrapper_add_str_to_obj(msg_wrap_obj_t *obj, msg_wrap_str_t *str)
 {
     msg_wrap_str_t *strp;
     if(obj->string_queue == NULL) { //empty
@@ -1047,7 +1047,7 @@ void msg_wrapper_rm_float_from_obj(msg_wrap_obj_t *obj, msg_wrap_float_t *f)
 }
 
 /*Add object wrapper to message wrapper*/
-void msg_wrapper_add_object_to_msg(msg_wrap_t *msg, msg_wrap_obj_t *obj)
+void msg_wrapper_add_obj_to_msg(msg_wrap_t *msg, msg_wrap_obj_t *obj)
 {
     msg_wrap_obj_t *op;
     if(msg->obj_queue == NULL) { //if empty 
@@ -1113,4 +1113,5 @@ void msg_wrapper_rm_cmd_from_msg(msg_wrap_t *msg, msg_wrap_cmd_t *cmd)
         prev = cp;
     }    
 }
-#endif
+#endif 
+/*EOF*/
