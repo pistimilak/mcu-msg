@@ -666,7 +666,7 @@ msg_hnd_t msg_hnd_create(int (*putc)(char))
     __str_buff.p = __str_buff.buff.s = NULL;
     __str_buff.buff.len = 0;
 
-    __putc = putc;            // init putchar
+    hnd.putc = __putc = putc;            // init putchar
 
     //features
     hnd.print_msg         = __msg_print;
