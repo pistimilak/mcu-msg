@@ -167,7 +167,7 @@ static inline uint8_t __is_whitespace(char c)
  * @return uint8_t comparison result
  */
 
-#define is_valid_keyword_char(c)        ((c == '_') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || \
+#define __is_valid_keyword_char(c)        ((c == '_') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || \
                                         (c >= '0' && c <= '9'))
 
 /**
@@ -241,7 +241,7 @@ static msg_str_t __find_keyword(msg_str_t str, char *keyword, char flagc, char s
             equal = 1;
             for(i = 0; __is_p_in_str(str, res.s + i) && i < res.len; i++) { // if not equal during the iterateion, break the loop
                 if((*(res.s + i) != *(keyword + i)) || __is_ctrl_char(*(res.s + i)) || 
-                                    !is_valid_keyword_char(*(res.s + i))) {
+                                    !__is_valid_keyword_char(*(res.s + i))) {
                     equal = 0;
                     break;
                 }
@@ -277,9 +277,10 @@ static msg_str_t __find_val(msg_obj_t obj, char *key)
         msg_destroy_str(&res);
         return res;
     }
-    if(*res.s != __CTRL_KEY_EQU) { // move pointer to 'equal'
-        while(__is_p_in_str(obj.content, res.s + 1) && *res.s != __CTRL_KEY_EQU) res.s++;
-    }
+    
+    // move pointer to 'equal'
+    while(__is_p_in_str(obj.content, res.s + 1) && *res.s != __CTRL_KEY_EQU) res.s++;
+    
     res.s++;
     while(__is_p_in_str(obj.content, res.s) && __is_whitespace(*res.s)) res.s++; //skip spaces after equal
 
@@ -304,9 +305,10 @@ msg_t msg_get(char *raw_str, char *id, msg_size_t len)
         return res;
     }
     p = res.id.s + res.id.len; //init pointer to end of the id
-    if (*p != __CTRL_START_MSG) { // if the next char is not START_MSG, move to the start flag
-        while(__is_p_in_str(res.content, p + 1) && *p != __CTRL_START_MSG) p++;
-    }
+
+    // if the next char is not START_MSG, move to the start flag
+    while(__is_p_in_str(res.content, p + 1) && *p != __CTRL_START_MSG) p++;
+    
     res.content.s = ++p; // set content string pointer to the current pos
     while(__is_p_in_str(res.content, p) && *p != __CTRL_STOP_MSG) { //calc length
         p++;
@@ -328,9 +330,9 @@ msg_obj_t msg_parser_get_obj(msg_t msg, char *id)
     }
 
     p = res.id.s + res.id.len;
-    if (*p != __CTRL_START_OBJ) {
-        while(__is_p_in_str(msg.content, p + 1) && *p != __CTRL_START_OBJ) p++;
-    }
+
+    while(__is_p_in_str(msg.content, p + 1) && *p != __CTRL_START_OBJ) p++;
+    
     res.content.s = ++p;
     while(__is_p_in_str(msg.content, p) && *p != __CTRL_STOP_OBJ) {
         p++;
