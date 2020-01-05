@@ -72,6 +72,9 @@ int main()
         printf(":");
         hnd.print_str(msg.content);
         printf("\n\n");
+        printf("Printing message with the handler:\n");
+        hnd.print_msg(msg);
+        printf("\n\n");
     } else {
         printf("message not found!\n\n");
     }
@@ -392,22 +395,22 @@ void *thread_mcu_slave_fnc(void *arg)
         T1 = msg_wrapper_create_float("T1", 32.45, 2);
         T2 = msg_wrapper_create_float("T2", 29.34, 2);
 
+        /*Add T1 and T2 to object*/
         msg_wrapper_add_float_to_obj(&temp_obj, &T1);
         msg_wrapper_add_float_to_obj(&temp_obj, &T2);
+
+        /*Add object to message*/
         msg_wrapper_add_obj_to_msg(&msg_out, &temp_obj);
 
         /*Polling the commong buffer*/
         while(1) {
             
-            
-            
+            /*Get message*/
             msg_in = msg_get(buff->buff, "MASTER_MSG", buff->buff_size);
-            
-
+        
             if(msg_get_content(msg_in) != NULL) { //message arrived
 
-                
-
+                /*Get command*/
                 cmd = msg_parser_get_cmd(msg_in, "Get_Temp");
                 if(msg_get_cmd_content(cmd) != NULL) { //command arrived
 

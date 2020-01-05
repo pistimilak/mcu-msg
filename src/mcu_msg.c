@@ -305,7 +305,7 @@ msg_t msg_get(char *raw_str, char *id, msg_size_t len)
         return res;
     }
     p = res.id.s + res.id.len; //init pointer to end of the id
-
+    
     // if the next char is not START_MSG, move to the start flag
     while(__is_p_in_str(res.content, p + 1) && *p != __CTRL_START_MSG) p++;
     
@@ -330,7 +330,7 @@ msg_obj_t msg_parser_get_obj(msg_t msg, char *id)
     }
 
     p = res.id.s + res.id.len;
-
+    
     while(__is_p_in_str(msg.content, p + 1) && *p != __CTRL_START_OBJ) p++;
     
     res.content.s = ++p;
@@ -650,7 +650,11 @@ static void __msg_print_str(msg_str_t str)
  */
 static void __msg_print(msg_t msg)
 {
+    __msg_putc(__CTRL_MSG_FLAG);
+    __msg_print_str(msg.id);
+    __msg_putc(__CTRL_START_MSG);
     __msg_print_str(msg.content);
+    __msg_putc(__CTRL_STOP_MSG);
 }
 
 /**
